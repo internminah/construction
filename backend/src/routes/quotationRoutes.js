@@ -2,20 +2,20 @@ const express = require('express');
 const router = express.Router();
 
 const {
-  getTestimonials,
-  getTestimonialById,
-  createTestimonial,
-  deleteTestimonial
-} = require('../controllers/testimonialController');
+  submitQuotation,
+  getQuotations,
+  getQuotationById,
+  deleteQuotation
+} = require('../controllers/quotationController');
 
 const { protect } = require('../middleware/authMiddleware');
 
 // ─── Public Routes ─────────────────────────────────────────────────
-router.get('/', getTestimonials);
-router.post('/', createTestimonial);
+router.post('/', submitQuotation);
 
 // ─── Protected Routes (Admin only — JWT required) ──────────────────
-router.get('/:id', protect, getTestimonialById);
-router.delete('/:id', protect, deleteTestimonial);
+router.get('/', protect, getQuotations);
+router.get('/:id', protect, getQuotationById);
+router.delete('/:id', protect, deleteQuotation);
 
 module.exports = router;
