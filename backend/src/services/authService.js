@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// TODO: const User = require('../models/userModel');
+const User = require('../models/userModel');
 
 /**
  * Login an admin user
@@ -11,8 +11,7 @@ const jwt = require('jsonwebtoken');
  */
 const loginAdmin = async (email, password) => {
   // ─── Step 1: Find user by email ──────────────────────────────────
-  // TODO: const user = await User.findByEmail(email);
-  const user = null; // remove this once Sufiyan's model is ready
+  const user = await User.findByEmail(email);
 
   if (!user) {
     const error = new Error('Invalid email or password');

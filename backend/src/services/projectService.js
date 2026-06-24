@@ -1,4 +1,4 @@
-// TODO: const Project = require('../models/projectModel');
+const Project = require('../models/Project');
 
 /**
  * Get all construction projects with optional filters
@@ -7,53 +7,12 @@
  */
 const getAllProjects = async (filters = {}) => {
   try {
-    const { category, status } = filters;
-
-    // TODO: const projects = await Project.findAll({ category, status });
-    let placeholderProjects = [
-      {
-        id: 1,
-        project_name: 'Greenwood Villas',
-        category: 'residential',
-        description: 'Luxury residential villa complex with 24 units.',
-        image: null,
-        status: 'completed'
-      },
-      {
-        id: 2,
-        project_name: 'Skyline Business Park',
-        category: 'commercial',
-        description: 'A modern multi-story commercial office complex.',
-        image: null,
-        status: 'ongoing'
-      },
-      {
-        id: 3,
-        project_name: 'Maple Heights Apartments',
-        category: 'residential',
-        description: 'Affordable housing project with 120 units.',
-        image: null,
-        status: 'ongoing'
-      }
-    ];
-
-    // Apply filters on placeholder data
-
-    if (category) {
-      placeholderProjects = placeholderProjects.filter(
-        (p) => p.category === category
-      );
-    }
-    if (status) {
-      placeholderProjects = placeholderProjects.filter(
-        (p) => p.status === status
-      );
-    }
+    const projects = await Project.findAll(filters);
 
     return {
       success: true,
       message: 'Projects retrieved successfully',
-      data: { projects: placeholderProjects }
+      data: { projects }
     };
   } catch (error) {
     return {
@@ -71,8 +30,7 @@ const getAllProjects = async (filters = {}) => {
  */
 const getProjectById = async (id) => {
   try {
-    // TODO: const project = await Project.findById(id);
-    const project = null; // remove once Sufiyan's model is ready
+    const project = await Project.findById(id);
 
     if (!project) {
       const error = new Error('Project not found');
@@ -102,23 +60,12 @@ const getProjectById = async (id) => {
  */
 const createProject = async (data) => {
   try {
-    const { project_name, category, description, image, status } = data;
-
-    // TODO: const newProject = await Project.create({ project_name, category, description, image, status });
-    const placeholderProject = {
-      id: Math.floor(Math.random() * 1000) + 4,
-      project_name,
-      category,
-      description,
-      image: image || null,
-      status: status || 'ongoing',
-      createdAt: new Date().toISOString()
-    };
+    const newProject = await Project.create(data);
 
     return {
       success: true,
       message: 'Project created successfully',
-      data: { project: placeholderProject }
+      data: { project: newProject }
     };
   } catch (error) {
     return {
@@ -137,19 +84,21 @@ const createProject = async (data) => {
  */
 const updateProject = async (id, data) => {
   try {
-    // TODO: const updatedProject = await Project.update(id, data);
-    const placeholderUpdatedProject = {
-      id: parseInt(id),
-      ...data,
-      updatedAt: new Date().toISOString()
-    };
+    const updatedProject = await Project.update(id, data);
+
+    if (!updatedProject) {
+      const error = new Error('Project not found');
+      error.statusCode = 404;
+      throw error;
+    }
 
     return {
       success: true,
       message: 'Project updated successfully',
-      data: { project: placeholderUpdatedProject }
+      data: { project: updatedProject }
     };
   } catch (error) {
+    if (error.statusCode) throw error;
     return {
       success: false,
       message: error.message || 'Failed to update project',
@@ -165,7 +114,16 @@ const updateProject = async (id, data) => {
  */
 const deleteProject = async (id) => {
   try {
-    // TODO: await Project.delete(id);
+    const deleted = await Project.delete(id);
+
+    if (!deleted) {
+      return {
+        success: false,
+        message: 'Project not found or already deleted',
+        data: {}
+      };
+    }
+
     return {
       success: true,
       message: 'Project deleted successfully',

@@ -64,29 +64,6 @@ const getInquiryById = async (req, res, next) => {
   }
 };
 
-// ─── PUT /api/contact/:id/status ───────────────────────────────────
-// Protected (JWT) — update inquiry status
-const updateInquiryStatus = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!status) {
-      return sendError(res, 400, 'Status is required');
-    }
-
-    const result = await editInquiryStatus(id, status);
-
-    if (!result.success) {
-      return sendError(res, 404, result.message);
-    }
-
-    return sendSuccess(res, 200, result.message, result.data.inquiry);
-  } catch (error) {
-    next(error);
-  }
-};
-
 // ─── DELETE /api/contact/:id ───────────────────────────────────────
 // Protected (JWT) — delete an inquiry
 const deleteInquiry = async (req, res, next) => {
@@ -109,6 +86,5 @@ module.exports = {
   createInquiry,
   getInquiries,
   getInquiryById,
-  updateInquiryStatus,
   deleteInquiry
 };

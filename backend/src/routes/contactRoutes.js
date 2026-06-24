@@ -5,7 +5,6 @@ const {
   createInquiry,
   getInquiries,
   getInquiryById,
-  updateInquiryStatus,
   deleteInquiry
 } = require('../controllers/contactController');
 
@@ -17,7 +16,6 @@ router.post('/', createInquiry);
 // ─── Protected Routes (Admin only — JWT required) ──────────────────
 router.get('/', protect, getInquiries);
 router.get('/:id', protect, getInquiryById);
-router.put('/:id/status', protect, updateInquiryStatus);
 router.delete('/:id', protect, deleteInquiry);
 
 module.exports = router;

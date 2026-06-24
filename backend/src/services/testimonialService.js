@@ -1,35 +1,17 @@
-// TODO: const Testimonial = require('../models/testimonialModel');
+const Testimonial = require('../models/Testimonial');
 
 /**
- * Get all approved testimonials
+ * Get all testimonials
  * @returns {{ success: boolean, message: string, data: object }}
  */
 const getAllTestimonials = async () => {
   try {
-    // TODO: const testimonials = await Testimonial.findAll({ where: { approved: true } });
-    const placeholderTestimonials = [
-      {
-        id: 1,
-        customer_name: 'Rahul Sharma',
-        rating: 5,
-        review: 'Excellent work on our home renovation. Highly recommend I Constructions!',
-        approved: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 2,
-        customer_name: 'Priya Mehta',
-        rating: 4,
-        review: 'Very professional team. Delivered the project on time.',
-        approved: true,
-        createdAt: new Date().toISOString()
-      }
-    ];
+    const testimonials = await Testimonial.findAll();
 
     return {
       success: true,
       message: 'Testimonials retrieved successfully',
-      data: { testimonials: placeholderTestimonials }
+      data: { testimonials }
     };
   } catch (error) {
     return {
@@ -47,8 +29,7 @@ const getAllTestimonials = async () => {
  */
 const getTestimonialById = async (id) => {
   try {
-    // TODO: const testimonial = await Testimonial.findById(id);
-    const testimonial = null; // remove once Sufiyan's model is ready
+    const testimonial = await Testimonial.findById(id);
 
     if (!testimonial) {
       const error = new Error('Testimonial not found');
@@ -78,22 +59,12 @@ const getTestimonialById = async (id) => {
  */
 const createTestimonial = async (data) => {
   try {
-    const { customer_name, rating, review } = data;
-
-    // TODO: const newTestimonial = await Testimonial.create({ customer_name, rating, review, approved: false });
-    const placeholderTestimonial = {
-      id: Math.floor(Math.random() * 1000) + 3,
-      customer_name,
-      rating: parseInt(rating),
-      review,
-      approved: false, // admin must approve before it goes public
-      createdAt: new Date().toISOString()
-    };
+    const newTestimonial = await Testimonial.create(data);
 
     return {
       success: true,
-      message: 'Testimonial submitted successfully. It will appear once approved.',
-      data: { testimonial: placeholderTestimonial }
+      message: 'Testimonial submitted successfully.',
+      data: { testimonial: newTestimonial }
     };
   } catch (error) {
     return {
@@ -111,7 +82,16 @@ const createTestimonial = async (data) => {
  */
 const deleteTestimonial = async (id) => {
   try {
-    // TODO: await Testimonial.delete(id);
+    const deleted = await Testimonial.delete(id);
+
+    if (!deleted) {
+      return {
+        success: false,
+        message: 'Testimonial not found or already deleted',
+        data: {}
+      };
+    }
+
     return {
       success: true,
       message: 'Testimonial deleted successfully',

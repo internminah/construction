@@ -1,4 +1,4 @@
-// TODO: const Quotation = require('../models/Quotation');
+const Quotation = require('../models/Quotation');
 
 /**
  * Submit a new quotation request (public)
@@ -7,24 +7,12 @@
  */
 const submitQuotation = async (data) => {
   try {
-    const { customer_name, email, phone, project_type, project_details } = data;
-
-    // TODO: const newQuotation = await Quotation.create({ customer_name, email, phone, project_type, project_details });
-    const placeholderQuotation = {
-      id: Math.floor(Math.random() * 1000) + 1,
-      customer_name,
-      email,
-      phone,
-      project_type,
-      project_details,
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    };
+    const newQuotation = await Quotation.create(data);
 
     return {
       success: true,
       message: 'Quotation request submitted successfully. We will get back to you soon.',
-      data: { quotation: placeholderQuotation }
+      data: { quotation: newQuotation }
     };
   } catch (error) {
     return {
@@ -41,34 +29,12 @@ const submitQuotation = async (data) => {
  */
 const getAllQuotations = async () => {
   try {
-    // TODO: const quotations = await Quotation.findAll();
-    const placeholderQuotations = [
-      {
-        id: 1,
-        customer_name: 'Amit Verma',
-        email: 'amit@example.com',
-        phone: '9876543210',
-        project_type: 'Residential Construction',
-        project_details: 'Need a 3BHK house built on 1200 sqft plot.',
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 2,
-        customer_name: 'Sneha Patil',
-        email: 'sneha@example.com',
-        phone: '9123456780',
-        project_type: 'Interior Design',
-        project_details: 'Office interior redesign for 3000 sqft space.',
-        status: 'reviewed',
-        createdAt: new Date().toISOString()
-      }
-    ];
+    const quotations = await Quotation.findAll();
 
     return {
       success: true,
       message: 'Quotations retrieved successfully',
-      data: { quotations: placeholderQuotations }
+      data: { quotations }
     };
   } catch (error) {
     return {
@@ -86,8 +52,7 @@ const getAllQuotations = async () => {
  */
 const getQuotationById = async (id) => {
   try {
-    // TODO: const quotation = await Quotation.findById(id);
-    const quotation = null; // remove once Sufiyan's model is ready
+    const quotation = await Quotation.findById(id);
 
     if (!quotation) {
       const error = new Error('Quotation not found');
@@ -117,7 +82,16 @@ const getQuotationById = async (id) => {
  */
 const deleteQuotation = async (id) => {
   try {
-    // TODO: await Quotation.delete(id);
+    const deleted = await Quotation.delete(id);
+
+    if (!deleted) {
+      return {
+        success: false,
+        message: 'Quotation not found or already deleted',
+        data: {}
+      };
+    }
+
     return {
       success: true,
       message: 'Quotation deleted successfully',
