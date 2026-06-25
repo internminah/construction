@@ -109,6 +109,14 @@ export interface DashboardStat {
   iconName: string;
 }
 
+export interface ProcessStep {
+  id: string;
+  step: string;
+  title: string;
+  description: string;
+  iconName: string;
+}
+
 // ==========================================
 // Centralized Datasets
 // ==========================================
@@ -143,6 +151,15 @@ export const socialLinks: SocialLink[] = [
 export const services: ServiceItem[] = [
   {
     id: "serv-1",
+    title: "Residential Construction",
+    description: "Custom premium residences, modern apartments, and green living environments.",
+    details: "Your dream home built with premium materials. We specialize in luxury residential estates, sustainable single-family residences, and upscale multi-family structures.",
+    slug: "residential",
+    iconName: "Building2",
+    image: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=600",
+  },
+  {
+    id: "serv-2",
     title: "Commercial Construction",
     description: "Building high-performance corporate offices, retail spaces, and commercial structures.",
     details: "We deliver commercial builds that optimize flow, support structural efficiency, and reflect modern luxury. Our services range from new build projects to tenant improvements.",
@@ -151,30 +168,39 @@ export const services: ServiceItem[] = [
     image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=600",
   },
   {
-    id: "serv-2",
-    title: "Residential Building",
-    description: "Custom premium residences, modern apartments, and green living environments.",
-    details: "Your dream home built with premium materials. We specialize in luxury residential estates, sustainable single-family residences, and upscale multi-family structures.",
-    slug: "residential",
-    iconName: "Building2",
-    image: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=600",
-  },
-  {
     id: "serv-3",
-    title: "Architectural Planning",
-    description: "State-of-the-art blueprints, 3D BIM visualizations, and schematic engineering.",
-    details: "Bridging architectural aesthetics with structural science. Our principal designers sketch detailed blueprints, conduct environmental feasibility surveys, and build virtual 3D walkthrough models.",
-    slug: "architecture",
-    iconName: "Compass",
-    image: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=600",
-  },
-  {
-    id: "serv-4",
-    title: "Interior Designing",
+    title: "Interior Design",
     description: "Elegant bespoke interior design concepts aligning utility and high-end aesthetics.",
     details: "Designing inside-out. We choose premium color configurations, load-bearing spatial layouts, and premium light systems to create breathtaking workspaces and living environments.",
     slug: "interior",
     iconName: "Award",
+    image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=600",
+  },
+  {
+    id: "serv-4",
+    title: "Renovation & Remodeling",
+    description: "Expanding, upgrading, and breathing new life into existing structural blueprints.",
+    details: "We transform dated residences and commercial spaces into modern masterpieces. From single-room updates to full-facility structural modernizations.",
+    slug: "renovation",
+    iconName: "Hammer",
+    image: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=600",
+  },
+  {
+    id: "serv-5",
+    title: "Civil Engineering",
+    description: "Infrastructure planning, load calculations, and environmental feasibility management.",
+    details: "Bridging architectural vision with load safety. Our structural engineers design foundations, manage grading blueprints, and inspect load-bearing steel alignments.",
+    slug: "engineering",
+    iconName: "Compass",
+    image: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=600",
+  },
+  {
+    id: "serv-6",
+    title: "Project Management",
+    description: "Lifecycle scheduling, procurement oversight, and strict quality control supervision.",
+    details: "End-to-end governance. We handle procurement, site inspections, contractor workflows, and schedule critical path models to ensure flawless delivery.",
+    slug: "management",
+    iconName: "Briefcase",
     image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=600",
   },
 ];
@@ -467,4 +493,39 @@ export async function getWhyChooseUs(): Promise<WhyChooseUsCard[]> {
 
 export async function getDashboardStats(): Promise<DashboardStat[]> {
   return new Promise((resolve) => setTimeout(() => resolve(dashboardStats), 50));
+}
+
+export const processTimeline: ProcessStep[] = [
+  {
+    id: "step-1",
+    step: "01",
+    title: "Initial Consultation",
+    description: "We align on your design vision, budget allocations, structural scope, and local feasibility criteria.",
+    iconName: "Target",
+  },
+  {
+    id: "step-2",
+    step: "02",
+    title: "Design & Planning",
+    description: "Our principal architect draft schematics, 3D BIM walkthroughs, and material lists for your approval.",
+    iconName: "Compass",
+  },
+  {
+    id: "step-3",
+    step: "03",
+    title: "Construction Phase",
+    description: "Master builders execute structural works under strict project coordination and safety parameters.",
+    iconName: "HardHat",
+  },
+  {
+    id: "step-4",
+    step: "04",
+    title: "Quality Inspection & Handover",
+    description: "Meticulous quality audits, environmental certifications, and key handovers for your new premium space.",
+    iconName: "Trophy",
+  },
+];
+
+export async function getProcessTimeline(): Promise<ProcessStep[]> {
+  return new Promise((resolve) => setTimeout(() => resolve(processTimeline), 50));
 }

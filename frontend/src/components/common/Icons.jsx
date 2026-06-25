@@ -193,3 +193,9 @@ export const ExternalLink = createIcon([
   <polyline key="2" points="15 3 21 3 21 9" />,
   <line key="3" x1="10" x2="21" y1="14" y2="3" />,
 ]);
+
+export const Hammer = createIcon([
+  <path key="1" d="m15 5 4 4" />,
+  <path key="2" d="M21.5 12H16l-.7 2 2 2-.7 2-3.8-3.8-.7-.7-.3-.3a4 4 0 1 0-5.6 5.6l5.3-5.3.7-.7.7.7 3.8 3.8-2 .7-2-2-2 .7v5.5l7.5-7.5Z" />,
+  <path key="3" d="M15 5 9 11" />,
+]);
