@@ -1,15 +1,8 @@
 export default function QuotationForm({ services }) {
-  const budgetOptions = [
-    "Under $100,000",
-    "$100,000 - $500,000",
-    "$500,000 - $2,000,000",
-    "$2,000,000+"
-  ];
-
   return (
     <section id="quote" className="py-20 bg-mint scroll-mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Section Title */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="flex items-center justify-center gap-2 mb-3">
@@ -32,7 +25,7 @@ export default function QuotationForm({ services }) {
           <h3 className="font-poppins font-bold text-2xl text-slate-dark mb-8">
             Specification Form
           </h3>
-          
+
           <form className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Field 1: Name */}
             <div>
@@ -78,38 +71,20 @@ export default function QuotationForm({ services }) {
               </select>
             </div>
 
-            {/* Field 4: Budget Scale */}
+            {/* Field 4: Phone Number */}
             <div>
               <label className="block text-xs font-poppins font-bold text-slate-dark uppercase tracking-wider mb-2">
-                Estimated Project Budget
-              </label>
-              <select
-                required
-                className="w-full bg-mint border border-primary/10 rounded-lg px-4 py-3.5 text-sm text-slate-dark focus:outline-none focus:border-primary focus:bg-white transition-all"
-              >
-                <option value="">Select a range...</option>
-                {budgetOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Field 5: Location */}
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-poppins font-bold text-slate-dark uppercase tracking-wider mb-2">
-                Project Site Location
+                Phone Number
               </label>
               <input
-                type="text"
+                type="tel"
                 required
-                placeholder="Manhattan, NY"
+                placeholder="+1 (555) 123-4567"
                 className="w-full bg-mint border border-primary/10 rounded-lg px-4 py-3.5 text-sm text-slate-dark focus:outline-none focus:border-primary focus:bg-white transition-all"
               />
             </div>
 
-            {/* Field 6: Details */}
+            {/* Field 5: Details */}
             <div className="sm:col-span-2">
               <label className="block text-xs font-poppins font-bold text-slate-dark uppercase tracking-wider mb-2">
                 Description of Requirements
