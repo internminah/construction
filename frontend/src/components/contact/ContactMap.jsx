@@ -1,0 +1,34 @@
+import { contactInfo } from "@/data/contactData";
+
+export default function ContactMap() {
+  return (
+    <section className="py-16 bg-mint">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <h2 className="font-poppins font-bold text-2xl sm:text-3xl text-slate-dark">
+            Our Location
+          </h2>
+          <p className="font-sans text-slate-light text-sm sm:text-base mt-2">
+            Visit our corporate headquarters in Manhattan or get directions below.
+          </p>
+        </div>
+
+        <div className="bg-white border border-primary/5 rounded-2xl p-4 shadow-xl overflow-hidden relative">
+          <div className="w-full h-[450px] rounded-xl overflow-hidden border border-mint-dark">
+            <iframe
+              src={contactInfo.googleMapEmbedUrl}
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen=""
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title={`${contactInfo.companyName} Head Office Map`}
+              className="grayscale-[20%] contrast-[110%] hover:grayscale-0 transition-all duration-500"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
