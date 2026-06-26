@@ -460,15 +460,45 @@ export async function getSocialLinks(): Promise<SocialLink[]> {
 }
 
 export async function getServices(): Promise<ServiceItem[]> {
-  return new Promise((resolve) => setTimeout(() => resolve(services), 50));
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/services`);
+    if (!res.ok) throw new Error("API response not ok");
+    const data = await res.json();
+    const result = Array.isArray(data.data) ? data.data : (data.data?.services || data.services);
+    if (Array.isArray(result)) return result;
+    throw new Error("Invalid response format");
+  } catch (error) {
+    console.error("Failed to fetch services, using static backup:", error);
+    return services;
+  }
 }
 
 export async function getProjects(): Promise<ProjectItem[]> {
-  return new Promise((resolve) => setTimeout(() => resolve(projects), 50));
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/projects`);
+    if (!res.ok) throw new Error("API response not ok");
+    const data = await res.json();
+    const result = Array.isArray(data.data) ? data.data : (data.data?.projects || data.projects);
+    if (Array.isArray(result)) return result;
+    throw new Error("Invalid response format");
+  } catch (error) {
+    console.error("Failed to fetch projects, using static backup:", error);
+    return projects;
+  }
 }
 
 export async function getReviews(): Promise<ReviewItem[]> {
-  return new Promise((resolve) => setTimeout(() => resolve(reviews), 50));
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/testimonials`);
+    if (!res.ok) throw new Error("API response not ok");
+    const data = await res.json();
+    const result = Array.isArray(data.data) ? data.data : (data.data?.testimonials || data.testimonials);
+    if (Array.isArray(result)) return result;
+    throw new Error("Invalid response format");
+  } catch (error) {
+    console.error("Failed to fetch reviews, using static backup:", error);
+    return reviews;
+  }
 }
 
 export async function getTeamMembers(): Promise<TeamMember[]> {
