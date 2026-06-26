@@ -1,8 +1,8 @@
-const { loginAdmin } = require('../services/authService');
+const { loginAdmin, logoutAdmin } = require('../services/authService');
 const { sendSuccess, sendError } = require('../utils/response');
 
 // ─── POST /api/auth/login ──────────────────────────────────────────
-// Public — admin login, returns JWT token
+// Public — admin login, returns Supabase session token
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -21,10 +21,11 @@ const login = async (req, res, next) => {
 };
 
 // ─── POST /api/auth/logout ─────────────────────────────────────────
-// Protected — JWT is stateless, no DB call needed, client discards token
+// Protected — Call authService to sign out of Supabase session
 const logout = async (req, res, next) => {
   try {
-    return sendSuccess(res, 200, 'Logged out successfully');
+    const result = await logoutAdmin();
+    return sendSuccess(res, 200, result.message);
   } catch (error) {
     next(error);
   }
