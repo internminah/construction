@@ -6,6 +6,7 @@ import { companyInfo } from "@/lib/data";
 export default function LeadGenQuotationForm({ services = [] }) {
   const [formData, setFormData] = useState({
     fullName: "",
+    phone: "",
     email: "",
     serviceRequired: "",
     message: "",
@@ -22,6 +23,15 @@ export default function LeadGenQuotationForm({ services = [] }) {
       newErrors.fullName = "Full name is required";
     } else if (formData.fullName.trim().length < 3) {
       newErrors.fullName = "Name must be at least 3 characters";
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else {
+      const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
+      if (!phoneRegex.test(formData.phone)) {
+        newErrors.phone = "Please enter a valid phone number";
+      }
     }
 
     if (!formData.email.trim()) {
@@ -72,6 +82,7 @@ export default function LeadGenQuotationForm({ services = [] }) {
   const handleReset = () => {
     setFormData({
       fullName: "",
+      phone: "",
       email: "",
       serviceRequired: "",
       message: "",
@@ -111,7 +122,7 @@ export default function LeadGenQuotationForm({ services = [] }) {
             <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               
               {/* Field 1: Full Name */}
-              <div className="sm:col-span-2">
+              <div className="sm:col-span-1">
                 <label className="block text-xs font-poppins font-bold text-slate-dark uppercase tracking-wider mb-2">
                   Full Name
                 </label>
@@ -127,6 +138,26 @@ export default function LeadGenQuotationForm({ services = [] }) {
                 />
                 {errors.fullName && (
                   <span className="text-xs text-red-600 mt-1 font-semibold block">{errors.fullName}</span>
+                )}
+              </div>
+
+              {/* Field 1.5: Phone Number */}
+              <div className="sm:col-span-1">
+                <label className="block text-xs font-poppins font-bold text-slate-dark uppercase tracking-wider mb-2">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="e.g. +1 (555) 000-0000"
+                  className={`w-full bg-mint border rounded-lg px-4 py-3.5 text-sm text-slate-dark focus:outline-none focus:bg-white focus:ring-1 transition-all ${
+                    errors.phone ? "border-red-500 focus:ring-red-500" : "border-primary/10 focus:border-primary focus:ring-primary"
+                  }`}
+                />
+                {errors.phone && (
+                  <span className="text-xs text-red-600 mt-1 font-semibold block">{errors.phone}</span>
                 )}
               </div>
 
@@ -238,7 +269,7 @@ export default function LeadGenQuotationForm({ services = [] }) {
 
               <div className="bg-mint rounded-xl p-6 text-left max-w-md mx-auto mb-8 border border-primary/5 text-sm space-y-2.5 text-slate-light">
                 <div><span className="font-poppins font-bold text-slate-dark">Email Registered:</span> {formData.email}</div>
-
+                <div><span className="font-poppins font-bold text-slate-dark">Phone Registered:</span> {formData.phone}</div>
                 <div><span className="font-poppins font-bold text-slate-dark">Lead Status:</span> <span className="text-accent font-semibold uppercase tracking-wider text-xs bg-accent/10 px-2 py-0.5 rounded">High Priority</span></div>
               </div>
 
