@@ -1,94 +1,78 @@
-import Image from "next/image";
-import styles from "./page.module.css";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
+import HeroSection from "@/components/home/HeroSection";
+import CompanyIntroSummary from "@/components/home/CompanyIntroSummary";
+import AboutUsOverview from "@/components/home/AboutUsOverview";
+import FeaturedProjectsShowcase from "@/components/home/FeaturedProjectsShowcase";
+import ProjectImageGallery from "@/components/home/ProjectImageGallery";
+import WhyChooseUs from "@/components/home/WhyChooseUs";
+import Testimonials from "@/components/home/Testimonials";
+import LeadGenQuotationForm from "@/components/home/LeadGenQuotationForm";
+import CallToAction from "@/components/home/CallToAction";
+import WhatsAppIntegration from "@/components/home/WhatsAppIntegration";
+import AiChatbotUi from "@/components/home/AiChatbotUi";
+import QuickNavigation from "@/components/home/QuickNavigation";
 import {
   getCompanyInfo,
   getNavLinks,
   getSocialLinks,
   getServices,
+  getProjects,
 } from "@/lib/data";
 
 export default async function Home() {
-  const [company, links, socials, allServices] = await Promise.all([
+  // Fetch all datasets asynchronously at the page level (Server Component)
+  const [company, links, socials, allServices, allProjects] = await Promise.all([
     getCompanyInfo(),
     getNavLinks(),
     getSocialLinks(),
     getServices(),
+    getProjects(),
   ]);
 
   return (
     <>
       <Navbar companyInfo={company} navLinks={links} />
+      
       <main className="flex-grow">
-        <div className={styles.page}>
-          <main className={styles.main}>
-            <Image
-              className={styles.logo}
-              src="/next.svg"
-              alt="Next.js logo"
-              width={100}
-              height={20}
-              priority
-            />
-            <div className={styles.intro}>
-              <h1 className="font-poppins font-bold text-2xl text-slate-dark text-center">Welcome to {company.name}</h1>
-              <p className="text-center text-sm text-slate-light mt-2 max-w-md mx-auto">
-                {company.description}
-              </p>
-              <div className="mt-8 border-t border-mint-dark pt-6 text-center">
-                <h2 className="font-poppins font-bold text-sm text-slate-dark uppercase tracking-wider">To get started, edit the page.js file.</h2>
-                <p className="text-xs text-slate-light mt-1">
-                  Looking for a starting point or more instructions? Head over to{" "}
-                  <a
-                    href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline text-primary hover:text-primary-light"
-                  >
-                    Templates
-                  </a>{" "}
-                  or the{" "}
-                  <a
-                    href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline text-primary hover:text-primary-light"
-                  >
-                    Learning
-                  </a>{" "}
-                  center.
-                </p>
-              </div>
-            </div>
-            <div className={styles.ctas}>
-              <a
-                className={styles.primary}
-                href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Image
-                  className={styles.logo}
-                  src="/vercel.svg"
-                  alt="Vercel logomark"
-                  width={16}
-                  height={16}
-                />
-                Deploy Now
-              </a>
-              <a
-                className={styles.secondary}
-                href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Documentation
-              </a>
-            </div>
-          </main>
-        </div>
+        {/* 1. Hero Section */}
+        <HeroSection companyInfo={company} />
+
+        {/* 2. Company Introduction Summary */}
+        <CompanyIntroSummary companyInfo={company} />
+
+        {/* 3. About Us Overview */}
+        <AboutUsOverview />
+
+        {/* 4. Featured Projects Showcase */}
+        <FeaturedProjectsShowcase projects={allProjects} />
+
+        {/* 5. Project Image Gallery */}
+        <ProjectImageGallery />
+
+        {/* 6. Why Choose Us */}
+        <WhyChooseUs />
+
+        {/* 7. Customer Reviews & Testimonials */}
+        <Testimonials />
+
+        {/* 8. Lead Generation / Quotation Request Form */}
+        <LeadGenQuotationForm services={allServices} />
+
+        {/* 9. Call to Action Section */}
+        <CallToAction companyInfo={company} />
+
+        {/* 12. Quick Navigation row */}
+        <QuickNavigation />
       </main>
+
+      {/* 10. WhatsApp Integration */}
+      <WhatsAppIntegration companyInfo={company} />
+
+      {/* 11. AI Chatbot UI */}
+      <AiChatbotUi companyInfo={company} />
+
+      {/* 13. Footer */}
       <Footer
         companyInfo={company}
         quickLinks={links}
@@ -98,3 +82,4 @@ export default async function Home() {
     </>
   );
 }
+
