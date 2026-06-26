@@ -522,7 +522,90 @@ export async function getWhyChooseUs(): Promise<WhyChooseUsCard[]> {
 }
 
 export async function getDashboardStats(): Promise<DashboardStat[]> {
-  return new Promise((resolve) => setTimeout(() => resolve(dashboardStats), 50));
+  try {
+    const [contactsRes, projectsRes, reviewsRes] = await Promise.all([
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/contact`),
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/projects`),
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/testimonials`),
+    ]);
+
+    const contacts = await contactsRes.json().catch(() => ({}));
+    const projects = await projectsRes.json().catch(() => ({}));
+    const reviews = await reviewsRes.json().catch(() => ({}));
+
+    // Contacts/Inquiries data helper:
+    const contactsData = Array.isArray(contacts.data) 
+      ? contacts.data 
+      : (contacts.data?.inquiries || contacts.inquiries || null);
+    const contactsCount = contactsData ? contactsData.length : 8;
+
+    // Projects data helper:
+    const projectsData = Array.isArray(projects.data) 
+      ? projects.data 
+      : (projects.data?.projects || projects.projects || null);
+    const projectsCount = projectsData ? projectsData.length : projects.length;
+
+    // Reviews data helper:
+    const reviewsData = Array.isArray(reviews.data) 
+      ? reviews.data 
+      : (reviews.data?.testimonials || reviews.testimonials || null);
+    const reviewsCount = reviewsData ? reviewsData.length : reviews.length;
+
+    return [
+      {
+        id: "db-1",
+        label: "Total Enquiries",
+        value: `${contactsCount}`,
+        change: "",
+        isPositive: true,
+        iconName: "Mail",
+      },
+      {
+        id: "db-2",
+        label: "Total Projects",
+        value: `${projectsCount}`,
+        change: "",
+        isPositive: true,
+        iconName: "Building2",
+      },
+      {
+        id: "db-3",
+        label: "Total Reviews",
+        value: `${reviewsCount}`,
+        change: "",
+        isPositive: true,
+        iconName: "Award",
+      },
+    ];
+  } catch (error) {
+    console.error("Failed to fetch dashboard stats, using static backup:", error);
+    return [
+      {
+        id: "db-1",
+        label: "Total Enquiries",
+        value: "8",
+        change: "",
+        isPositive: true,
+        iconName: "Mail",
+      },
+      {
+        id: "db-2",
+        label: "Total Projects",
+        value: `${projects.length}`,
+        change: "",
+        isPositive: true,
+        iconName: "Building2",
+      },
+      {
+        id: "db-3",
+        label: "Total Reviews",
+        value: `${reviews.length}`,
+        change: "",
+        isPositive: true,
+        iconName: "Award",
+      },
+    ];
+  }
 }
 
 export const processTimeline: ProcessStep[] = [
