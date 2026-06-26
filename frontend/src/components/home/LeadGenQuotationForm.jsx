@@ -15,6 +15,7 @@ export default function LeadGenQuotationForm({ services = [] }) {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const validate = () => {
     const newErrors = {};
@@ -66,17 +67,43 @@ export default function LeadGenQuotationForm({ services = [] }) {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
     setIsSubmitting(true);
+    setSubmitError("");
 
-    // Simulate API round-trip delay
-    setTimeout(() => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const payload = {
+        customer_name: formData.fullName,
+        phone: formData.phone,
+        email: formData.email,
+        project_type: formData.serviceRequired,
+        project_details: formData.message,
+      };
+
+      const res = await fetch(`${baseUrl}/api/quotations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setIsSuccess(true);
+      } else {
+        setSubmitError(data.message || "Failed to submit quotation. Please try again.");
+      }
+    } catch (err) {
+      setSubmitError("Network error. Please make sure the server is running and try again.");
+    } finally {
       setIsSubmitting(false);
-      setIsSuccess(true);
-    }, 1200);
+    }
   };
 
   const handleReset = () => {
@@ -119,7 +146,18 @@ export default function LeadGenQuotationForm({ services = [] }) {
           <div className="absolute top-0 inset-x-0 h-1.5 bg-primary" />
 
           {!isSuccess ? (
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              {submitError && (
+                <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-sm font-sans flex items-center gap-3">
+                  <svg className="w-5 h-5 text-red-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <div>
+                    <strong>Error:</strong> {submitError}
+                  </div>
+                </div>
+              )}
+              <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               
               {/* Field 1: Full Name */}
               <div className="sm:col-span-1">
@@ -250,6 +288,7 @@ export default function LeadGenQuotationForm({ services = [] }) {
               </div>
 
             </form>
+            </div>
           ) : (
             /* Success confirmation card with scale-in transition */
             <div className="text-center py-10 animate-scale-in">
