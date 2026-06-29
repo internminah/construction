@@ -3,16 +3,23 @@
 import { useState } from "react";
 import ProjectCard from "@/components/portfolio/ProjectCard";
 import ProjectDetailModal from "@/components/portfolio/ProjectDetailModal";
-import { commercialProjects } from "@/lib/portfolioData";
+import { usePortfolioProjects } from "@/hooks/usePortfolioProjects";
 
 export default function CommercialProjects() {
+  const { projects, loading } = usePortfolioProjects();
   const [selectedProject, setSelectedProject] = useState(null);
+
+  const commercialProjects = projects.filter(
+    (p) => p.category === "Commercial"
+  );
+
+  if (!loading && commercialProjects.length === 0) return null;
 
   return (
     <section className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {/* Section Header with accent side bar */}
+        {/* Section Header */}
         <div className="flex flex-col md:flex-row gap-8 items-start md:items-end mb-16">
           <div className="md:w-1/2">
             <div className="flex items-center gap-2 mb-3">
@@ -22,7 +29,7 @@ export default function CommercialProjects() {
               </span>
             </div>
             <h2 className="font-poppins font-bold text-3xl sm:text-4xl text-slate-dark leading-tight">
-              Corporate Towers & Commercial Complexes
+              Corporate Towers &amp; Commercial Complexes
             </h2>
           </div>
           <p className="md:w-1/2 font-sans text-slate-light text-sm sm:text-base leading-relaxed self-end">
@@ -31,16 +38,27 @@ export default function CommercialProjects() {
           </p>
         </div>
 
+        {/* Loading skeleton */}
+        {loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-2xl h-72 animate-pulse" />
+            ))}
+          </div>
+        )}
+
         {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {commercialProjects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              onViewDetail={setSelectedProject}
-            />
-          ))}
-        </div>
+        {!loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {commercialProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onViewDetail={setSelectedProject}
+              />
+            ))}
+          </div>
+        )}
 
       </div>
 

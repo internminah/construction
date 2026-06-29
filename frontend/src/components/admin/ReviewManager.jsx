@@ -160,21 +160,44 @@ export default function ReviewManager({ companyInfo }) {
   const [formContent, setFormContent] = useState("");
   const [formStatus, setFormStatus] = useState("Pending");
 
-  // Initialize and simulate API fetching
+  // Initialize and load actual database testimonials (reviews)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setReviews(initialMockReviews);
-      setLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
+    const fetchReviews = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${apiUrl}/api/testimonials`);
+        if (res.ok) {
+          const data = await res.json();
+          const result = Array.isArray(data.data) ? data.data : (data.data?.testimonials || data.testimonials || []);
+          const mapped = result.map((r) => ({
+            id: r.id.toString(),
+            clientName: r.customer_name || r.clientName || "",
+            projectName: r.projectName || "Bespoke Glass Villa",
+            role: r.role || "Client",
+            content: r.review || r.content || "",
+            rating: Number(r.rating) || 5,
+            date: r.date || "2026-06-29",
+            status: r.status || "Approved",
+            image: r.image || ""
+          }));
+          setReviews(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to load reviews:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReviews();
   }, []);
 
-  // Isolated mock API handlers (easy integration later)
+  // API handlers calling backend endpoints
   const handleUpdateReview = async (e) => {
     e.preventDefault();
     if (!editReview || !formClientName.trim()) return;
 
-    // Simulate PUT /api/reviews/:id
+    // Local update fallback since backend doesn't support testimonial updates
     const updated = {
       ...editReview,
       clientName: formClientName,
@@ -200,7 +223,7 @@ export default function ReviewManager({ companyInfo }) {
   };
 
   const handlePatchStatus = async (id, newStatus) => {
-    // Simulate PATCH /api/reviews/:id/status
+    // Local patch fallback since backend doesn't support testimonial status updates
     setLoading(true);
     setTimeout(() => {
       setReviews((prev) =>
@@ -215,14 +238,30 @@ export default function ReviewManager({ companyInfo }) {
   };
 
   const handleDeleteReview = async (id) => {
-    // Simulate DELETE /api/reviews/:id
     setLoading(true);
-    setTimeout(() => {
-      setReviews((prev) => prev.filter((r) => r.id !== id));
-      setSelectedReview(null);
+    try {
+      const token = localStorage.getItem("adminToken");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${apiUrl}/api/testimonials/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (res.ok) {
+        setReviews((prev) => prev.filter((r) => r.id !== id));
+        setSelectedReview(null);
+      } else {
+        alert("Failed to delete review from database.");
+      }
+    } catch (err) {
+      console.error("Error deleting review:", err);
+      alert("Error deleting review.");
+    } finally {
       setDeleteConfirmReview(null);
       setLoading(false);
-    }, 400);
+    }
   };
 
   const openEditModal = (review) => {
