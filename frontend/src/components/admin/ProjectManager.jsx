@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Eye, Award, Briefcase, Compass, Trophy } from "@/components/common/Icons";
 import AdminLayout from "./AdminLayout";
+import { useApiRequest } from "@/hooks/useApiRequest";
 
 // Custom SVG Icons
 const EditIcon = (props) => (
@@ -120,6 +121,7 @@ const initialMockProjects = [
 ];
 
 export default function ProjectManager({ companyInfo }) {
+  const apiRequest = useApiRequest();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -137,21 +139,51 @@ export default function ProjectManager({ companyInfo }) {
   // Form Fields State
   const [formTitle, setFormTitle] = useState("");
   const [formCategory, setFormCategory] = useState("Commercial");
-  const [formLocation, setFormLocation] = useState("");
-  const [formYear, setFormYear] = useState(new Date().getFullYear());
-  const [formClient, setFormClient] = useState("");
   const [formStatus, setFormStatus] = useState("Completed");
   const [formDescription, setFormDescription] = useState("");
   const [formImage, setFormImage] = useState("");
-  const [formCompletionDate, setFormCompletionDate] = useState("");
+  const [servicesList, setServicesList] = useState([]);
+  const [formServiceId, setFormServiceId] = useState("");
 
-  // Initialize and simulate API fetching
+  // Initialize and load actual database projects and services
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setProjects(initialMockProjects);
-      setLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
+    const loadData = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        
+        // Load services
+        const servRes = await fetch(`${apiUrl}/api/services`);
+        let servs = [];
+        if (servRes.ok) {
+          const servData = await servRes.json();
+          servs = Array.isArray(servData.data) ? servData.data : (servData.data?.services || servData.services || []);
+          setServicesList(servs);
+        }
+
+        // Load projects
+        const res = await fetch(`${apiUrl}/api/projects`);
+        if (res.ok) {
+          const data = await res.json();
+          const result = Array.isArray(data.data) ? data.data : (data.data?.projects || data.projects || []);
+          const mapped = result.map((p) => ({
+            id: p.id.toString(),
+            title: p.project_name || p.title || "",
+            category: p.category || "Commercial",
+            description: p.description || "",
+            image: p.image || "https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=800",
+            status: p.status || "Completed",
+            service_id: p.service_id ? p.service_id.toString() : ""
+          }));
+          setProjects(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to load dashboard portfolio data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   // Handle local file selection and convert to base64 preview (Simulated Image Upload API)
@@ -160,103 +192,137 @@ export default function ProjectManager({ companyInfo }) {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        // reader.result represents base64 string, simulating POST /api/upload
         setFormImage(reader.result);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // Isolated mock API handlers (easy integration later)
+  // API handlers calling backend endpoints
   const handleCreateProject = async (e) => {
     e.preventDefault();
     if (!formTitle.trim()) return;
 
-    // Simulate POST /api/portfolio
-    const newProject = {
-      id: `proj-${Date.now()}`,
-      title: formTitle,
-      category: formCategory,
-      location: formLocation,
-      year: parseInt(formYear) || new Date().getFullYear(),
-      client: formClient,
-      description: formDescription,
-      image: formImage || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=800",
-      status: formStatus,
-      completionDate: formCompletionDate || new Date().toISOString().split("T")[0]
-    };
-
     setLoading(true);
-    setTimeout(() => {
-      setProjects((prev) => [newProject, ...prev]);
-      setAddModalOpen(false);
-      resetForm();
+    try {
+      const result = await apiRequest('/api/projects', {
+        method: "POST",
+        body: JSON.stringify({
+          project_name: formTitle,
+          category: formCategory,
+          description: formDescription,
+          image: formImage || "https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=800",
+          status: formStatus,
+          service_id: formServiceId ? parseInt(formServiceId) : null
+        })
+      });
+
+      if (result.ok && result.data?.data) {
+        const created = result.data.data;
+        const newProject = {
+          id: created.id.toString(),
+          title: created.project_name,
+          category: created.category,
+          description: created.description,
+          image: created.image,
+          status: created.status,
+          service_id: created.service_id ? created.service_id.toString() : ""
+        };
+        setProjects((prev) => [newProject, ...prev]);
+        setAddModalOpen(false);
+        resetForm();
+      } else if (result.status !== 401) {
+        alert(result.message || "Failed to create portfolio item.");
+      }
+    } catch (err) {
+      console.error("Error creating project:", err);
+      alert("Network error — could not create portfolio item.");
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
 
   const handleUpdateProject = async (e) => {
     e.preventDefault();
     if (!editProject || !formTitle.trim()) return;
 
-    // Simulate PUT /api/portfolio/:id
-    const updated = {
-      ...editProject,
-      title: formTitle,
-      category: formCategory,
-      location: formLocation,
-      year: parseInt(formYear) || new Date().getFullYear(),
-      client: formClient,
-      description: formDescription,
-      image: formImage,
-      status: formStatus,
-      completionDate: formCompletionDate
-    };
-
     setLoading(true);
-    setTimeout(() => {
-      setProjects((prev) =>
-        prev.map((p) => (p.id === editProject.id ? updated : p))
-      );
-      setEditProject(null);
-      resetForm();
+    try {
+      const result = await apiRequest(`/api/projects/${editProject.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          project_name: formTitle,
+          category: formCategory,
+          description: formDescription,
+          image: formImage,
+          status: formStatus,
+          service_id: formServiceId ? parseInt(formServiceId) : null
+        })
+      });
+
+      if (result.ok && result.data?.data) {
+        const updatedDb = result.data.data;
+        const updated = {
+          ...editProject,
+          title: updatedDb.project_name,
+          category: updatedDb.category,
+          description: updatedDb.description,
+          image: updatedDb.image,
+          status: updatedDb.status,
+          service_id: updatedDb.service_id ? updatedDb.service_id.toString() : ""
+        };
+        setProjects((prev) =>
+          prev.map((p) => (p.id === editProject.id ? updated : p))
+        );
+        setEditProject(null);
+        resetForm();
+      } else if (result.status !== 401) {
+        alert(result.message || "Failed to update portfolio item.");
+      }
+    } catch (err) {
+      console.error("Error updating project:", err);
+      alert("Network error — could not update portfolio item.");
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
 
   const handleDeleteProject = async (id) => {
-    // Simulate DELETE /api/portfolio/:id
     setLoading(true);
-    setTimeout(() => {
-      setProjects((prev) => prev.filter((p) => p.id !== id));
+    try {
+      const result = await apiRequest(`/api/projects/${id}`, { method: "DELETE" });
+
+      if (result.ok) {
+        setProjects((prev) => prev.filter((p) => p.id !== id));
+      } else if (result.status !== 401) {
+        alert(result.message || "Failed to delete portfolio item.");
+      }
+    } catch (err) {
+      console.error("Error deleting project:", err);
+      alert("Network error — could not delete portfolio item.");
+    } finally {
       setDeleteConfirmProject(null);
       setLoading(false);
-    }, 400);
+    }
   };
 
   const openEditModal = (project) => {
     setEditProject(project);
     setFormTitle(project.title);
     setFormCategory(project.category);
-    setFormLocation(project.location);
-    setFormYear(project.year);
-    setFormClient(project.client);
     setFormStatus(project.status);
     setFormDescription(project.description);
     setFormImage(project.image);
-    setFormCompletionDate(project.completionDate);
+    setFormServiceId(project.service_id || "");
   };
 
   const resetForm = () => {
     setFormTitle("");
     setFormCategory("Commercial");
-    setFormLocation("");
-    setFormYear(new Date().getFullYear());
-    setFormClient("");
     setFormStatus("Completed");
     setFormDescription("");
     setFormImage("");
-    setFormCompletionDate("");
+    setFormServiceId("");
   };
 
   // Searching and Filtering
@@ -430,9 +496,7 @@ export default function ProjectManager({ companyInfo }) {
                       <th className="py-3 px-2">Project Thumbnail</th>
                       <th className="py-3 px-2">Showcase Name</th>
                       <th className="py-3 px-2">Category</th>
-                      <th className="py-3 px-2">Client Details</th>
-                      <th className="py-3 px-2">Location</th>
-                      <th className="py-3 px-2">Completion Date</th>
+                      <th className="py-3 px-2">Associated Service</th>
                       <th className="py-3 px-2">Status</th>
                       <th className="py-3 px-2 text-right">Actions</th>
                     </tr>
@@ -467,17 +531,11 @@ export default function ProjectManager({ companyInfo }) {
                             {item.category}
                           </span>
                         </td>
-                        {/* Client details */}
+                        {/* Associated Service */}
                         <td className="py-4 px-2 text-slate-dark font-medium text-xs">
-                          {item.client || "Self Published"}
-                        </td>
-                        {/* Location */}
-                        <td className="py-4 px-2 text-slate-light text-xs font-medium">
-                          {item.location}
-                        </td>
-                        {/* Completion Date */}
-                        <td className="py-4 px-2 text-slate-light text-xs font-semibold">
-                          {item.completionDate}
+                          {servicesList.find((s) => s.id.toString() === item.service_id)?.name || 
+                           servicesList.find((s) => s.id.toString() === item.service_id)?.title || 
+                           "General / None"}
                         </td>
                         {/* Status */}
                         <td className="py-4 px-2">
@@ -564,7 +622,7 @@ export default function ProjectManager({ companyInfo }) {
             <div className="flex justify-between items-start border-b border-mint-dark pb-4">
               <div>
                 <h3 className="font-poppins font-bold text-lg text-slate-dark">{selectedProject.title}</h3>
-                <span className="text-[10px] text-slate-light uppercase tracking-wider block mt-0.5">Category: {selectedProject.category} | Client: {selectedProject.client}</span>
+                <span className="text-[10px] text-slate-light uppercase tracking-wider block mt-0.5">Category: {selectedProject.category}</span>
               </div>
               <span
                 className={`text-[9px] font-semibold border rounded-full px-2.5 py-0.5 uppercase tracking-wide inline-block ${
@@ -592,12 +650,12 @@ export default function ProjectManager({ companyInfo }) {
             <div className="space-y-4 text-sm font-sans">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Site Location</span>
-                  <span className="text-slate-dark font-semibold mt-0.5 block">{selectedProject.location}</span>
-                </div>
-                <div>
-                  <span className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Completion Target</span>
-                  <span className="text-slate-dark font-semibold mt-0.5 block">{selectedProject.completionDate} ({selectedProject.year})</span>
+                  <span className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Associated Service Division</span>
+                  <span className="text-slate-dark font-semibold mt-0.5 block">
+                    {servicesList.find((s) => s.id.toString() === selectedProject.service_id)?.name || 
+                     servicesList.find((s) => s.id.toString() === selectedProject.service_id)?.title || 
+                     "General / None"}
+                  </span>
                 </div>
               </div>
               <div>
@@ -658,43 +716,19 @@ export default function ProjectManager({ companyInfo }) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Client Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formClient}
-                    onChange={(e) => setFormClient(e.target.value)}
-                    placeholder="e.g. Aura Logistics Ltd"
-                    className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Location *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formLocation}
-                    onChange={(e) => setFormLocation(e.target.value)}
-                    placeholder="e.g. Brooklyn, NY"
-                    className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Completion Date</label>
-                  <input
-                    type="date"
-                    value={formCompletionDate}
-                    onChange={(e) => {
-                      setFormCompletionDate(e.target.value);
-                      if (e.target.value) {
-                        setFormYear(new Date(e.target.value).getFullYear());
-                      }
-                    }}
+                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Associated Service Division</label>
+                  <select
+                    value={formServiceId}
+                    onChange={(e) => setFormServiceId(e.target.value)}
                     className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white cursor-pointer"
-                  />
+                  >
+                    <option value="">Choose a service division...</option>
+                    {servicesList.map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.name || service.title}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Status</label>
@@ -812,41 +846,19 @@ export default function ProjectManager({ companyInfo }) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Client Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formClient}
-                    onChange={(e) => setFormClient(e.target.value)}
-                    className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Location *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formLocation}
-                    onChange={(e) => setFormLocation(e.target.value)}
-                    className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Completion Date</label>
-                  <input
-                    type="date"
-                    value={formCompletionDate}
-                    onChange={(e) => {
-                      setFormCompletionDate(e.target.value);
-                      if (e.target.value) {
-                        setFormYear(new Date(e.target.value).getFullYear());
-                      }
-                    }}
+                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Associated Service Division</label>
+                  <select
+                    value={formServiceId}
+                    onChange={(e) => setFormServiceId(e.target.value)}
                     className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white cursor-pointer"
-                  />
+                  >
+                    <option value="">Choose a service division...</option>
+                    {servicesList.map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.name || service.title}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Status</label>

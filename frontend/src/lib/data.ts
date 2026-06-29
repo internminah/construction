@@ -194,15 +194,6 @@ export const services: ServiceItem[] = [
     iconName: "Compass",
     image: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=600",
   },
-  {
-    id: "serv-6",
-    title: "Project Management",
-    description: "Lifecycle scheduling, procurement oversight, and strict quality control supervision.",
-    details: "End-to-end governance. We handle procurement, site inspections, contractor workflows, and schedule critical path models to ensure flawless delivery.",
-    slug: "management",
-    iconName: "Briefcase",
-    image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=600",
-  },
 ];
 
 export const projects: ProjectItem[] = [
@@ -465,7 +456,28 @@ export async function getServices(): Promise<ServiceItem[]> {
     if (!res.ok) throw new Error("API response not ok");
     const data = await res.json();
     const result = Array.isArray(data.data) ? data.data : (data.data?.services || data.services);
-    if (Array.isArray(result)) return result;
+    if (Array.isArray(result)) {
+      return result.map((s: any) => {
+        const title = s.title || s.name || '';
+        let iconName = 'Building2';
+        if (title.toLowerCase().includes('residential')) iconName = 'Building2';
+        else if (title.toLowerCase().includes('commercial')) iconName = 'Building';
+        else if (title.toLowerCase().includes('interior')) iconName = 'Award';
+        else if (title.toLowerCase().includes('renovation')) iconName = 'Hammer';
+        else if (title.toLowerCase().includes('engineering')) iconName = 'Compass';
+        else if (title.toLowerCase().includes('management')) iconName = 'Briefcase';
+
+        return {
+          id: s.id?.toString() || '',
+          title,
+          description: s.description || '',
+          details: s.description || '',
+          slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          iconName,
+          image: s.image || 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=600'
+        };
+      });
+    }
     throw new Error("Invalid response format");
   } catch (error) {
     console.error("Failed to fetch services, using static backup:", error);
@@ -479,7 +491,18 @@ export async function getProjects(): Promise<ProjectItem[]> {
     if (!res.ok) throw new Error("API response not ok");
     const data = await res.json();
     const result = Array.isArray(data.data) ? data.data : (data.data?.projects || data.projects);
-    if (Array.isArray(result)) return result;
+    if (Array.isArray(result)) {
+      return result.map((p: any) => ({
+        id: p.id?.toString() || '',
+        title: p.project_name || p.title || '',
+        description: p.description || '',
+        location: p.location || 'New York, NY',
+        year: p.year || 2026,
+        image: p.image || 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=800',
+        category: p.category || 'Commercial',
+        client: p.client || 'I Constructions Client'
+      }));
+    }
     throw new Error("Invalid response format");
   } catch (error) {
     console.error("Failed to fetch projects, using static backup:", error);
@@ -493,7 +516,16 @@ export async function getReviews(): Promise<ReviewItem[]> {
     if (!res.ok) throw new Error("API response not ok");
     const data = await res.json();
     const result = Array.isArray(data.data) ? data.data : (data.data?.testimonials || data.testimonials);
-    if (Array.isArray(result)) return result;
+    if (Array.isArray(result)) {
+      return result.map((r: any) => ({
+        id: r.id?.toString() || '',
+        clientName: r.customer_name || r.clientName || '',
+        role: r.role || 'Client',
+        content: r.review || r.content || '',
+        rating: Number(r.rating) || 5,
+        image: r.image || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150'
+      }));
+    }
     throw new Error("Invalid response format");
   } catch (error) {
     console.error("Failed to fetch reviews, using static backup:", error);

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Eye, Building2, Building, Briefcase, Award, Compass, Hammer } from "@/components/common/Icons";
 import AdminLayout from "./AdminLayout";
+import { useApiRequest } from "@/hooks/useApiRequest";
 
 // Custom SVG Icons
 const EditIcon = (props) => (
@@ -137,6 +138,7 @@ const initialMockServices = [
 ];
 
 export default function ServiceManager({ companyInfo }) {
+  const apiRequest = useApiRequest();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -159,79 +161,145 @@ export default function ServiceManager({ companyInfo }) {
   const [formIcon, setFormIcon] = useState("Building2");
   const [formImage, setFormImage] = useState("");
 
-  // Initialize and simulate API fetching
+  // Initialize and load actual database services
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setServices(initialMockServices);
-      setLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
+    const fetchServices = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${apiUrl}/api/services`);
+        if (res.ok) {
+          const data = await res.json();
+          const result = Array.isArray(data.data) ? data.data : (data.data?.services || data.services || []);
+          const mapped = result.map((s) => ({
+            id: s.id.toString(),
+            title: s.name || s.title || "",
+            category: s.category || "Construction",
+            description: s.description || "",
+            details: s.description || "",
+            slug: (s.name || s.title || "").toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+            iconName: s.iconName || "Building2",
+            image: s.image || "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=600",
+            status: s.status || "Active",
+            lastUpdated: s.lastUpdated || "2026-06-29"
+          }));
+          setServices(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to load services:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
   }, []);
 
-  // Isolated mock API handlers (easy integration later)
+  // API handlers calling backend endpoints
   const handleCreateService = async (e) => {
     e.preventDefault();
     if (!formTitle.trim()) return;
 
-    // Simulate POST /api/services
-    const newService = {
-      id: `serv-${Date.now()}`,
-      title: formTitle,
-      category: formCategory,
-      description: formDescription,
-      details: formDetails,
-      slug: formTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-      iconName: formIcon,
-      image: formImage || "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=600",
-      status: formStatus,
-      lastUpdated: new Date().toISOString().split("T")[0]
-    };
-
     setLoading(true);
-    setTimeout(() => {
-      setServices((prev) => [newService, ...prev]);
-      setAddModalOpen(false);
-      resetForm();
+    try {
+      const result = await apiRequest('/api/services', {
+        method: "POST",
+        body: JSON.stringify({
+          name: formTitle,
+          description: formDescription,
+          image: formImage || "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=600"
+        })
+      });
+
+      if (result.ok && result.data?.data) {
+        const created = result.data.data;
+        const newService = {
+          id: created.id.toString(),
+          title: created.name || created.title || "",
+          category: formCategory || "Construction",
+          description: created.description,
+          details: created.description,
+          slug: (created.name || created.title || "").toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          iconName: formIcon,
+          image: created.image,
+          status: formStatus,
+          lastUpdated: new Date().toISOString().split("T")[0]
+        };
+        setServices((prev) => [newService, ...prev]);
+        setAddModalOpen(false);
+        resetForm();
+      } else if (result.status !== 401) {
+        alert(result.message || "Failed to create service.");
+      }
+    } catch (err) {
+      console.error("Error creating service:", err);
+      alert("Network error — could not create service.");
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
 
   const handleUpdateService = async (e) => {
     e.preventDefault();
     if (!editService || !formTitle.trim()) return;
 
-    // Simulate PUT /api/services/:id
-    const updated = {
-      ...editService,
-      title: formTitle,
-      category: formCategory,
-      description: formDescription,
-      details: formDetails,
-      iconName: formIcon,
-      image: formImage,
-      status: formStatus,
-      lastUpdated: new Date().toISOString().split("T")[0]
-    };
-
     setLoading(true);
-    setTimeout(() => {
-      setServices((prev) =>
-        prev.map((s) => (s.id === editService.id ? updated : s))
-      );
-      setEditService(null);
-      resetForm();
+    try {
+      const result = await apiRequest(`/api/services/${editService.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          name: formTitle,
+          description: formDescription,
+          image: formImage
+        })
+      });
+
+      if (result.ok && result.data?.data) {
+        const updatedDb = result.data.data;
+        const updated = {
+          ...editService,
+          title: updatedDb.name || updatedDb.title || "",
+          category: formCategory,
+          description: updatedDb.description,
+          details: updatedDb.description,
+          slug: (updatedDb.name || updatedDb.title || "").toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          iconName: formIcon,
+          image: updatedDb.image,
+          status: formStatus,
+          lastUpdated: new Date().toISOString().split("T")[0]
+        };
+        setServices((prev) =>
+          prev.map((s) => (s.id === editService.id ? updated : s))
+        );
+        setEditService(null);
+        resetForm();
+      } else if (result.status !== 401) {
+        alert(result.message || "Failed to update service.");
+      }
+    } catch (err) {
+      console.error("Error updating service:", err);
+      alert("Network error — could not update service.");
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
 
   const handleDeleteService = async (id) => {
-    // Simulate DELETE /api/services/:id
     setLoading(true);
-    setTimeout(() => {
-      setServices((prev) => prev.filter((s) => s.id !== id));
+    try {
+      const result = await apiRequest(`/api/services/${id}`, { method: "DELETE" });
+
+      if (result.ok) {
+        setServices((prev) => prev.filter((s) => s.id !== id));
+      } else if (result.status !== 401) {
+        alert(result.message || "Failed to delete service.");
+      }
+    } catch (err) {
+      console.error("Error deleting service:", err);
+      alert("Network error — could not delete service.");
+    } finally {
       setDeleteConfirmService(null);
       setLoading(false);
-    }, 400);
+    }
   };
 
   const openEditModal = (service) => {

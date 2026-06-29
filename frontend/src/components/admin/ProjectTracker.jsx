@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Eye, Briefcase, Award, Compass, Users } from "@/components/common/Icons";
 import AdminLayout from "./AdminLayout";
+import { useApiRequest } from "@/hooks/useApiRequest";
 
 // Custom SVG Icons
 const EditIcon = (props) => (
@@ -142,6 +143,7 @@ const initialMockProjects = [
 ];
 
 export default function ProjectTracker({ companyInfo }) {
+  const apiRequest = useApiRequest();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -159,122 +161,220 @@ export default function ProjectTracker({ companyInfo }) {
 
   // Form Fields State
   const [formTitle, setFormTitle] = useState("");
-  const [formClient, setFormClient] = useState("");
-  const [formManager, setFormManager] = useState("Dr. Alaina Vance");
-  const [formStartDate, setFormStartDate] = useState("");
-  const [formExpectedCompletion, setFormExpectedCompletion] = useState("");
-  const [formStatus, setFormStatus] = useState("Planning");
+  const [formStatus, setFormStatus] = useState("In Progress");
   const [formProgress, setFormProgress] = useState(0);
-  const [formPriority, setFormPriority] = useState("Medium");
   const [formDescription, setFormDescription] = useState("");
+  const [servicesList, setServicesList] = useState([]);
+  const [formServiceId, setFormServiceId] = useState("");
 
-  // Initialize and simulate API fetching
+  // Initialize and load actual database projects and services
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setProjects(initialMockProjects);
-      setLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, []);
+    const loadData = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        
+        // Load services
+        const servRes = await fetch(`${apiUrl}/api/services`);
+        let servs = [];
+        if (servRes.ok) {
+          const servData = await servRes.json();
+          servs = Array.isArray(servData.data) ? servData.data : (servData.data?.services || servData.services || []);
+          setServicesList(servs);
+        }
 
-  // Isolated mock API handlers (easy integration later)
-  const handleCreateProject = async (e) => {
-    e.preventDefault();
-    if (!formTitle.trim()) return;
-
-    // Simulate POST /api/projects
-    const newProject = {
-      id: `proj-track-${Date.now()}`,
-      title: formTitle,
-      client: formClient,
-      manager: formManager,
-      startDate: formStartDate || new Date().toISOString().split("T")[0],
-      expectedCompletion: formExpectedCompletion || new Date().toISOString().split("T")[0],
-      status: formStatus,
-      progress: parseInt(formProgress) || 0,
-      priority: formPriority,
-      description: formDescription
+        // Load projects
+        const res = await fetch(`${apiUrl}/api/projects`);
+        if (res.ok) {
+          const data = await res.json();
+          const result = Array.isArray(data.data) ? data.data : (data.data?.projects || data.projects || []);
+          const mapped = result.map((p) => ({
+            id: p.id.toString(),
+            title: p.project_name || p.title || "",
+            status: p.status || "Ongoing",
+            progress: p.progress !== undefined ? p.progress : (p.status === "Completed" ? 100 : 45),
+            description: p.description || "",
+            service_id: p.service_id ? p.service_id.toString() : ""
+          }));
+          setProjects(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to load project tracker data:", err);
+      } finally {
+        setLoading(false);
+      }
     };
 
+    loadData();
+  }, []);
+
+  const determineCategory = (serviceId) => {
+    if (!serviceId) return "Commercial";
+    const service = servicesList.find((s) => s.id.toString() === serviceId.toString());
+    if (!service) return "Commercial";
+    const title = (service.name || service.title || "").toLowerCase();
+    if (title.includes("residential")) return "Residential";
+    if (title.includes("commercial")) return "Commercial";
+    if (title.includes("interior")) return "Residential";
+    if (title.includes("renovation")) return "Residential";
+    if (title.includes("civil")) return "Civil Engineering";
+    return "Commercial";
+  };
+
+  // API handlers calling backend endpoints
+  const handleCreateProject = async (e) => {
+    e.preventDefault();
+    if (!formTitle.trim() || !formDescription.trim()) {
+      alert('Project Name and Description are required.');
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
-      setProjects((prev) => [newProject, ...prev]);
-      setAddModalOpen(false);
-      resetForm();
+    try {
+      const result = await apiRequest('/api/projects', {
+        method: "POST",
+        body: JSON.stringify({
+          project_name: formTitle,
+          category: determineCategory(formServiceId),
+          description: formDescription,
+          image: "",
+          status: formStatus,
+          service_id: formServiceId ? parseInt(formServiceId) : null
+        })
+      });
+
+      if (result.ok && result.data?.data) {
+        const created = result.data.data;
+        const newProject = {
+          id: created.id.toString(),
+          title: created.project_name,
+          status: created.status,
+          progress: parseInt(formProgress) || 0,
+          description: created.description,
+          service_id: created.service_id ? created.service_id.toString() : ""
+        };
+        setProjects((prev) => [newProject, ...prev]);
+        setAddModalOpen(false);
+        resetForm();
+      } else if (result.status !== 401) {
+        alert(result.message || "Failed to create project. Please try again.");
+      }
+    } catch (err) {
+      console.error("Error creating project:", err);
+      alert("Network error — could not create project.");
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
 
   const handleUpdateProject = async (e) => {
     e.preventDefault();
     if (!editProject || !formTitle.trim()) return;
 
-    // Simulate PUT /api/projects/:id
-    const updated = {
-      ...editProject,
-      title: formTitle,
-      client: formClient,
-      manager: formManager,
-      startDate: formStartDate,
-      expectedCompletion: formExpectedCompletion,
-      status: formStatus,
-      progress: parseInt(formProgress) || 0,
-      priority: formPriority,
-      description: formDescription
-    };
-
     setLoading(true);
-    setTimeout(() => {
-      setProjects((prev) =>
-        prev.map((p) => (p.id === editProject.id ? updated : p))
-      );
-      setEditProject(null);
-      resetForm();
+    try {
+      const result = await apiRequest(`/api/projects/${editProject.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          project_name: formTitle,
+          category: determineCategory(formServiceId),
+          description: formDescription,
+          image: "",
+          status: formStatus,
+          service_id: formServiceId ? parseInt(formServiceId) : null
+        })
+      });
+
+      if (result.ok && result.data?.data) {
+        const updatedDb = result.data.data;
+        const updated = {
+          ...editProject,
+          title: updatedDb.project_name,
+          status: updatedDb.status,
+          progress: parseInt(formProgress) || 0,
+          description: updatedDb.description,
+          service_id: updatedDb.service_id ? updatedDb.service_id.toString() : ""
+        };
+        setProjects((prev) =>
+          prev.map((p) => (p.id === editProject.id ? updated : p))
+        );
+        setEditProject(null);
+        resetForm();
+      } else if (result.status !== 401) {
+        alert(result.message || "Failed to update project.");
+      }
+    } catch (err) {
+      console.error("Error updating project:", err);
+      alert("Network error — could not update project.");
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
 
   const handleUpdateStatus = async (e) => {
     e.preventDefault();
     if (!statusUpdateProject) return;
 
-    // Simulate PATCH /api/projects/:id/status
     setLoading(true);
-    setTimeout(() => {
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.id === statusUpdateProject.id
-            ? { ...p, status: formStatus, progress: parseInt(formProgress) }
-            : p
-        )
-      );
-      setStatusUpdateProject(null);
-      resetForm();
+    try {
+      const result = await apiRequest(`/api/projects/${statusUpdateProject.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          project_name: statusUpdateProject.title,
+          category: determineCategory(statusUpdateProject.service_id),
+          description: statusUpdateProject.description,
+          image: "",
+          status: formStatus,
+          service_id: statusUpdateProject.service_id ? parseInt(statusUpdateProject.service_id) : null
+        })
+      });
+
+      if (result.ok) {
+        setProjects((prev) =>
+          prev.map((p) =>
+            p.id === statusUpdateProject.id
+              ? { ...p, status: formStatus, progress: parseInt(formProgress) }
+              : p
+          )
+        );
+        setStatusUpdateProject(null);
+        resetForm();
+      } else if (result.status !== 401) {
+        alert(result.message || "Failed to update status.");
+      }
+    } catch (err) {
+      console.error("Error updating status:", err);
+      alert("Network error — could not update status.");
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
 
   const handleDeleteProject = async (id) => {
-    // Simulate DELETE /api/projects/:id
     setLoading(true);
-    setTimeout(() => {
-      setProjects((prev) => prev.filter((p) => p.id !== id));
+    try {
+      const result = await apiRequest(`/api/projects/${id}`, { method: "DELETE" });
+
+      if (result.ok) {
+        setProjects((prev) => prev.filter((p) => p.id !== id));
+      } else if (result.status !== 401) {
+        alert(result.message || "Failed to delete project.");
+      }
+    } catch (err) {
+      console.error("Error deleting project:", err);
+      alert("Network error — could not delete project.");
+    } finally {
       setDeleteConfirmProject(null);
       setLoading(false);
-    }, 400);
+    }
   };
 
   const openEditModal = (project) => {
     setEditProject(project);
     setFormTitle(project.title);
-    setFormClient(project.client);
-    setFormManager(project.manager);
-    setFormStartDate(project.startDate);
-    setFormExpectedCompletion(project.expectedCompletion);
     setFormStatus(project.status);
     setFormProgress(project.progress);
-    setFormPriority(project.priority);
     setFormDescription(project.description);
+    setFormServiceId(project.service_id || "");
   };
 
   const openStatusUpdateModal = (project) => {
@@ -285,14 +385,10 @@ export default function ProjectTracker({ companyInfo }) {
 
   const resetForm = () => {
     setFormTitle("");
-    setFormClient("");
-    setFormManager("Dr. Alaina Vance");
-    setFormStartDate("");
-    setFormExpectedCompletion("");
-    setFormStatus("Planning");
+    setFormStatus("In Progress");
     setFormProgress(0);
-    setFormPriority("Medium");
     setFormDescription("");
+    setFormServiceId("");
   };
 
   // Searching and Filtering
@@ -479,11 +575,8 @@ export default function ProjectTracker({ companyInfo }) {
                   <thead>
                     <tr className="text-left text-xs text-slate-light/75 uppercase font-poppins font-bold tracking-wider">
                       <th className="py-3 px-2">Project Details</th>
-                      <th className="py-3 px-2">Client</th>
-                      <th className="py-3 px-2">Manager</th>
-                      <th className="py-3 px-2">Timeline</th>
+                      <th className="py-3 px-2">Associated Service</th>
                       <th className="py-3 px-2">Progress</th>
-                      <th className="py-3 px-2">Priority</th>
                       <th className="py-3 px-2">Status</th>
                       <th className="py-3 px-2 text-right">Actions</th>
                     </tr>
@@ -496,18 +589,11 @@ export default function ProjectTracker({ companyInfo }) {
                           <span className="block font-poppins font-bold text-slate-dark text-sm">{item.title}</span>
                           <span className="block text-[10px] text-slate-light font-semibold">ID: {item.id}</span>
                         </td>
-                        {/* Client */}
+                        {/* Associated Service */}
                         <td className="py-4 px-2 text-slate-dark font-medium text-xs">
-                          {item.client}
-                        </td>
-                        {/* Manager */}
-                        <td className="py-4 px-2 text-slate-light text-xs font-semibold">
-                          {item.manager}
-                        </td>
-                        {/* Start Date & Expected Completion */}
-                        <td className="py-4 px-2 text-xs text-slate-light">
-                          <span className="block font-semibold">Start: {item.startDate}</span>
-                          <span className="block text-[10px] mt-0.5">End: {item.expectedCompletion}</span>
+                          {servicesList.find((s) => s.id.toString() === item.service_id)?.name || 
+                           servicesList.find((s) => s.id.toString() === item.service_id)?.title || 
+                           "General / None"}
                         </td>
                         {/* Progress Bar Column */}
                         <td className="py-4 px-2 max-w-[120px]">
@@ -522,20 +608,6 @@ export default function ProjectTracker({ companyInfo }) {
                               {item.progress}%
                             </span>
                           </div>
-                        </td>
-                        {/* Priority Badge */}
-                        <td className="py-4 px-2">
-                          <span
-                            className={`text-[9px] font-bold border rounded px-2 py-0.5 uppercase tracking-wide inline-block ${
-                              item.priority === "High"
-                                ? "bg-red-50 text-red-700 border-red-200"
-                                : item.priority === "Medium"
-                                ? "bg-amber-50 text-amber-700 border-amber-200"
-                                : "bg-gray-100 text-gray-700 border-gray-200"
-                            }`}
-                          >
-                            {item.priority}
-                          </span>
                         </td>
                         {/* Status badge */}
                         <td className="py-4 px-2">
@@ -632,7 +704,7 @@ export default function ProjectTracker({ companyInfo }) {
             <div className="flex justify-between items-start border-b border-mint-dark pb-4">
               <div>
                 <h3 className="font-poppins font-bold text-lg text-slate-dark">{selectedProject.title}</h3>
-                <span className="text-[10px] text-slate-light uppercase tracking-wider block mt-0.5">Client: {selectedProject.client}</span>
+                <span className="text-[10px] text-slate-light uppercase tracking-wider block mt-0.5">Category: Commercial</span>
               </div>
               <span
                 className={`text-[9px] font-semibold border rounded-full px-2.5 py-0.5 uppercase tracking-wide inline-block ${
@@ -652,23 +724,12 @@ export default function ProjectTracker({ companyInfo }) {
             <div className="space-y-4 text-sm font-sans">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Project Manager</span>
-                  <span className="text-slate-dark font-semibold mt-0.5 block">{selectedProject.manager}</span>
-                </div>
-                <div>
-                  <span className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Priority Rank</span>
-                  <span className="text-slate-dark font-semibold mt-0.5 block">{selectedProject.priority} Priority</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Start Date</span>
-                  <span className="text-slate-dark font-semibold mt-0.5 block">{selectedProject.startDate}</span>
-                </div>
-                <div>
-                  <span className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Expected Completion</span>
-                  <span className="text-slate-dark font-semibold mt-0.5 block">{selectedProject.expectedCompletion}</span>
+                  <span className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Associated Service Division</span>
+                  <span className="text-slate-dark font-semibold mt-0.5 block">
+                    {servicesList.find((s) => s.id.toString() === selectedProject.service_id)?.name || 
+                     servicesList.find((s) => s.id.toString() === selectedProject.service_id)?.title || 
+                     "General / None"}
+                  </span>
                 </div>
               </div>
 
@@ -727,66 +788,19 @@ export default function ProjectTracker({ companyInfo }) {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Client Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formClient}
-                    onChange={(e) => setFormClient(e.target.value)}
-                    placeholder="e.g. Nexus Development Group"
-                    className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Assigned Project Manager</label>
+                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Associated Service Division</label>
                   <select
-                    value={formManager}
-                    onChange={(e) => setFormManager(e.target.value)}
+                    value={formServiceId}
+                    onChange={(e) => setFormServiceId(e.target.value)}
                     className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white cursor-pointer"
                   >
-                    <option value="Dr. Alaina Vance">Dr. Alaina Vance</option>
-                    <option value="Marcus Sterling">Marcus Sterling</option>
-                    <option value="David Kross">David Kross</option>
-                    <option value="Sarah Jenkins">Sarah Jenkins</option>
+                    <option value="">Choose a service division...</option>
+                    {servicesList.map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.name || service.title}
+                      </option>
+                    ))}
                   </select>
-                </div>
-                <div>
-                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Priority Rank</label>
-                  <select
-                    value={formPriority}
-                    onChange={(e) => setFormPriority(e.target.value)}
-                    className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white cursor-pointer"
-                  >
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Start Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={formStartDate}
-                    onChange={(e) => setFormStartDate(e.target.value)}
-                    className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white cursor-pointer"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Expected Completion *</label>
-                  <input
-                    type="date"
-                    required
-                    value={formExpectedCompletion}
-                    onChange={(e) => setFormExpectedCompletion(e.target.value)}
-                    className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white cursor-pointer"
-                  />
                 </div>
               </div>
 
@@ -798,10 +812,9 @@ export default function ProjectTracker({ companyInfo }) {
                     onChange={(e) => setFormStatus(e.target.value)}
                     className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white cursor-pointer"
                   >
-                    <option value="Planning">Planning</option>
-                    <option value="Ongoing">Ongoing</option>
-                    <option value="On Hold">On Hold</option>
+                                      <option value="In Progress">In Progress</option>
                     <option value="Completed">Completed</option>
+                    <option value="Featured">Featured</option>
                   </select>
                 </div>
                 <div>
@@ -871,65 +884,19 @@ export default function ProjectTracker({ companyInfo }) {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Client Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formClient}
-                    onChange={(e) => setFormClient(e.target.value)}
-                    className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Assigned Project Manager</label>
+                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Associated Service Division</label>
                   <select
-                    value={formManager}
-                    onChange={(e) => setFormManager(e.target.value)}
+                    value={formServiceId}
+                    onChange={(e) => setFormServiceId(e.target.value)}
                     className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white cursor-pointer"
                   >
-                    <option value="Dr. Alaina Vance">Dr. Alaina Vance</option>
-                    <option value="Marcus Sterling">Marcus Sterling</option>
-                    <option value="David Kross">David Kross</option>
-                    <option value="Sarah Jenkins">Sarah Jenkins</option>
+                    <option value="">Choose a service division...</option>
+                    {servicesList.map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.name || service.title}
+                      </option>
+                    ))}
                   </select>
-                </div>
-                <div>
-                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Priority Rank</label>
-                  <select
-                    value={formPriority}
-                    onChange={(e) => setFormPriority(e.target.value)}
-                    className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white cursor-pointer"
-                  >
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Start Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={formStartDate}
-                    onChange={(e) => setFormStartDate(e.target.value)}
-                    className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white cursor-pointer"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Expected Completion *</label>
-                  <input
-                    type="date"
-                    required
-                    value={formExpectedCompletion}
-                    onChange={(e) => setFormExpectedCompletion(e.target.value)}
-                    className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white cursor-pointer"
-                  />
                 </div>
               </div>
 
@@ -941,10 +908,9 @@ export default function ProjectTracker({ companyInfo }) {
                     onChange={(e) => setFormStatus(e.target.value)}
                     className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white cursor-pointer"
                   >
-                    <option value="Planning">Planning</option>
-                    <option value="Ongoing">Ongoing</option>
-                    <option value="On Hold">On Hold</option>
+                                      <option value="In Progress">In Progress</option>
                     <option value="Completed">Completed</option>
+                    <option value="Featured">Featured</option>
                   </select>
                 </div>
                 <div>
@@ -1012,10 +978,9 @@ export default function ProjectTracker({ companyInfo }) {
                   }}
                   className="w-full bg-mint border border-primary/10 rounded-lg px-3 py-2 mt-1 text-slate-dark focus:outline-none focus:border-primary focus:bg-white cursor-pointer"
                 >
-                  <option value="Planning">Planning</option>
-                  <option value="Ongoing">Ongoing</option>
-                  <option value="On Hold">On Hold</option>
+                                    <option value="In Progress">In Progress</option>
                   <option value="Completed">Completed</option>
+                  <option value="Featured">Featured</option>
                 </select>
               </div>
 

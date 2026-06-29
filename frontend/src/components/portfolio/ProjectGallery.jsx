@@ -2,20 +2,34 @@
 
 import { useState } from "react";
 import { X, ArrowRight, Eye } from "@/components/common/Icons";
-import { galleryImages } from "@/lib/portfolioData";
+import { usePortfolioProjects } from "@/hooks/usePortfolioProjects";
 
 export default function ProjectGallery() {
+  const { projects, loading } = usePortfolioProjects();
   const [selectedIdx, setSelectedIdx] = useState(null);
+
+  // Filter projects that have valid images
+  const galleryItems = projects
+    .filter((p) => p.image && p.image.trim() !== "")
+    .map((p, idx) => ({
+      id: p.id,
+      url: p.image,
+      title: p.title,
+      category: p.category,
+      description: p.description,
+    }));
 
   const handlePrev = (e) => {
     e.stopPropagation();
-    setSelectedIdx((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1));
+    setSelectedIdx((prev) => (prev === 0 ? galleryItems.length - 1 : prev - 1));
   };
 
   const handleNext = (e) => {
     e.stopPropagation();
-    setSelectedIdx((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1));
+    setSelectedIdx((prev) => (prev === galleryItems.length - 1 ? 0 : prev + 1));
   };
+
+  if (!loading && galleryItems.length === 0) return null;
 
   return (
     <section className="py-20 bg-mint">
@@ -38,43 +52,54 @@ export default function ProjectGallery() {
           </p>
         </div>
 
+        {/* Loading Skeleton */}
+        {loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white/50 rounded-2xl h-56 animate-pulse" />
+            ))}
+          </div>
+        )}
+
         {/* Gallery Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {galleryImages.map((img, idx) => (
-            <div
-              key={img.id}
-              onClick={() => setSelectedIdx(idx)}
-              className={`group relative overflow-hidden rounded-2xl cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 bg-slate-900 ${
-                idx === 0 || idx === 5 ? "sm:col-span-2 sm:row-span-1" : ""
-              }`}
-              style={{ height: idx === 0 || idx === 5 ? "280px" : "220px" }}
-            >
-              <img
-                src={img.url}
-                alt={img.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
+        {!loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {galleryItems.map((img, idx) => (
+              <div
+                key={img.id}
+                onClick={() => setSelectedIdx(idx)}
+                className={`group relative overflow-hidden rounded-2xl cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 bg-slate-900 ${
+                  idx === 0 || idx === 5 ? "sm:col-span-2 sm:row-span-1" : ""
+                }`}
+                style={{ height: idx === 0 || idx === 5 ? "280px" : "220px" }}
+              >
+                <img
+                  src={img.url}
+                  alt={img.title}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
 
-              {/* Hover overlay */}
-              <div className="absolute inset-0 bg-slate-darkest/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-slate-darkest/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-              {/* Hover content */}
-              <div className="absolute inset-x-0 bottom-0 p-5 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10 flex items-end justify-between pointer-events-none">
-                <div>
-                  <span className="text-[10px] font-poppins font-bold text-accent uppercase tracking-widest">
-                    {img.category}
-                  </span>
-                  <h3 className="font-poppins font-bold text-sm text-white mt-0.5 leading-snug">
-                    {img.title}
-                  </h3>
-                </div>
-                <div className="p-2.5 bg-primary text-mint rounded-full shadow-lg shrink-0">
-                  <Eye className="h-4 w-4" />
+                {/* Hover content */}
+                <div className="absolute inset-x-0 bottom-0 p-5 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10 flex items-end justify-between pointer-events-none">
+                  <div>
+                    <span className="text-[10px] font-poppins font-bold text-accent uppercase tracking-widest">
+                      {img.category}
+                    </span>
+                    <h3 className="font-poppins font-bold text-sm text-white mt-0.5 leading-snug">
+                      {img.title}
+                    </h3>
+                  </div>
+                  <div className="p-2.5 bg-primary text-mint rounded-full shadow-lg shrink-0">
+                    <Eye className="h-4 w-4" />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
       </div>
 
@@ -118,24 +143,24 @@ export default function ProjectGallery() {
           >
             <div className="overflow-hidden rounded-2xl shadow-2xl max-h-[65vh] flex items-center justify-center bg-black/30">
               <img
-                src={galleryImages[selectedIdx].url}
-                alt={galleryImages[selectedIdx].title}
+                src={galleryItems[selectedIdx].url}
+                alt={galleryItems[selectedIdx].title}
                 className="max-h-[65vh] max-w-full object-contain"
               />
             </div>
 
             <div className="text-center text-white max-w-2xl px-4">
               <span className="text-xs font-poppins font-bold text-accent uppercase tracking-widest">
-                {galleryImages[selectedIdx].category}
+                {galleryItems[selectedIdx].category}
               </span>
               <h3 className="font-poppins font-bold text-xl sm:text-2xl mt-1">
-                {galleryImages[selectedIdx].title}
+                {galleryItems[selectedIdx].title}
               </h3>
               <p className="font-sans text-gray-400 text-sm mt-2 leading-relaxed">
-                {galleryImages[selectedIdx].description}
+                {galleryItems[selectedIdx].description}
               </p>
               <p className="text-xs text-gray-500 mt-3 font-poppins font-semibold">
-                {selectedIdx + 1} / {galleryImages.length}
+                {selectedIdx + 1} / {galleryItems.length}
               </p>
             </div>
           </div>
