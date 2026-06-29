@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -89,6 +89,20 @@ const CloseIcon = (props) => (
 export default function AdminLayout({ children, companyInfo, activeTab }) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        router.push("/admin/login");
+      } else {
+        setIsAuthenticated(true);
+        setCheckingAuth(false);
+      }
+    }
+  }, [router]);
 
   const handleLogout = (e) => {
     e.preventDefault();
@@ -106,6 +120,26 @@ export default function AdminLayout({ children, companyInfo, activeTab }) {
     { name: "Projects", href: "/admin/projects", icon: Briefcase },
     { name: "Reviews", href: "/admin/reviews", icon: Heart },
   ];
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-mint flex flex-col justify-center items-center font-sans">
+        <div className="flex flex-col items-center gap-4">
+          <div className="p-4 bg-primary/10 text-primary rounded-2xl animate-pulse">
+            <Building2 className="h-10 w-10 animate-spin [animation-duration:3s]" />
+          </div>
+          <div className="text-center">
+            <h3 className="font-poppins font-bold text-lg text-slate-dark">Verifying Session</h3>
+            <p className="text-xs text-slate-light mt-1">Please wait while we secure your connection...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-mint flex font-sans">

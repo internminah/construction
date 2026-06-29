@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Building2, Eye } from "@/components/common/Icons";
 
@@ -32,6 +32,34 @@ export default function AdminLoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("adminToken");
+      if (token) {
+        router.push("/admin");
+      } else {
+        setCheckingAuth(false);
+      }
+    }
+  }, [router]);
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-mint flex flex-col justify-center items-center font-sans">
+        <div className="flex flex-col items-center gap-4">
+          <div className="p-4 bg-primary/10 text-primary rounded-2xl animate-pulse">
+            <Building2 className="h-10 w-10 animate-spin [animation-duration:3s]" />
+          </div>
+          <div className="text-center">
+            <h3 className="font-poppins font-bold text-lg text-slate-dark">Verifying Session</h3>
+            <p className="text-xs text-slate-light mt-1">Please wait while we secure your connection...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Isolated Authentication API call wrapper
   const performLogin = async (email, password) => {
