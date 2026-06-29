@@ -67,17 +67,42 @@ export default function ContactForm() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
     setIsSubmitting(true);
 
-    // Simulate API round-trip delay
-    setTimeout(() => {
+    try {
+      const cleanPhone = formData.phone.replace(/\D/g, "");
+      const payload = {
+        name: formData.fullName,
+        email: formData.email,
+        phone: cleanPhone || null,
+        message: `Subject: ${formData.subject}\n\n${formData.message}`,
+      };
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${apiUrl}/api/contact`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        setIsSuccess(true);
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        setErrors({ submit: errorData.message || "Failed to submit contact enquiry. Please try again." });
+      }
+    } catch (err) {
+      console.error("Submission error:", err);
+      setErrors({ submit: "A network error occurred. Please check your connection." });
+    } finally {
       setIsSubmitting(false);
-      setIsSuccess(true);
-    }, 1200);
+    }
   };
 
   const handleReset = () => {
@@ -110,6 +135,12 @@ export default function ContactForm() {
                   Have an inquiry or project spec in mind? Fill out this form and we'll reply shortly.
                 </p>
               </div>
+
+              {errors.submit && (
+                <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-sans text-center">
+                  {errors.submit}
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {/* Field 1: Full Name */}

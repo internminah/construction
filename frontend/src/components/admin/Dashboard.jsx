@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   Building2,
   Mail,
@@ -10,49 +11,47 @@ import {
 import AdminLayout from "./AdminLayout";
 
 export default function Dashboard({ companyInfo, stats, projects, reviews }) {
-  // Centralized mock datasets for dashboard
-  const enquiries = [
-    {
-      id: "enq-1",
-      name: "Marcus Sterling",
-      email: "marcus@sterling.com",
-      phone: "+1 (555) 987-6543",
-      category: "Residential Construction",
-      date: "2026-06-25",
-      status: "New",
-      statusColor: "bg-emerald-100 text-emerald-800 border-emerald-200"
-    },
-    {
-      id: "enq-2",
-      name: "Clara Vance",
-      email: "clara@vance.com",
-      phone: "+1 (555) 876-5432",
-      category: "Commercial Buildout",
-      date: "2026-06-24",
-      status: "In Progress",
-      statusColor: "bg-blue-100 text-blue-800 border-blue-200"
-    },
-    {
-      id: "enq-3",
-      name: "David Kross",
-      email: "david@kross.com",
-      phone: "+1 (555) 765-4321",
-      category: "Interior Design",
-      date: "2026-06-23",
-      status: "Resolved",
-      statusColor: "bg-gray-100 text-gray-800 border-gray-200"
-    },
-    {
-      id: "enq-4",
-      name: "Sarah Jenkins",
-      email: "sarah@jenkins.com",
-      phone: "+1 (555) 654-3210",
-      category: "Facility Renovation",
-      date: "2026-06-22",
-      status: "New",
-      statusColor: "bg-emerald-100 text-emerald-800 border-emerald-200"
-    }
-  ];
+  const [enquiries, setEnquiries] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEnquiries = async () => {
+      try {
+        const token = localStorage.getItem("adminToken");
+        if (!token) return;
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${apiUrl}/api/contact`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.data)) {
+            // Map database columns to support UI expected fields
+            const mapped = data.data.map((item) => ({
+              id: item.id,
+              name: item.name,
+              email: item.email,
+              phone: item.phone ? item.phone.toString() : "N/A",
+              category: "General Inquiry",
+              status: "New",
+              statusColor: "bg-emerald-100 text-emerald-800 border-emerald-200"
+            }));
+            setEnquiries(mapped);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch enquiries:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEnquiries();
+  }, []);
 
   const activities = [
     {
@@ -118,7 +117,7 @@ export default function Dashboard({ companyInfo, stats, projects, reviews }) {
           <div className="flex justify-between items-start">
             <div>
               <span className="text-xs font-semibold text-slate-light/75 block uppercase tracking-wider">Total Enquiries</span>
-              <span className="font-poppins font-extrabold text-3xl text-slate-dark block mt-1.5">{enquiries.length}+</span>
+              <span className="font-poppins font-extrabold text-3xl text-slate-dark block mt-1.5">{enquiries.length}</span>
             </div>
             <div className="p-3 bg-primary/10 text-primary rounded-xl">
               <Mail className="h-5 w-5" />

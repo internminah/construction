@@ -4,18 +4,24 @@ import { useState } from "react";
 import { ArrowRight } from "@/components/common/Icons";
 import ProjectCard from "@/components/portfolio/ProjectCard";
 import ProjectDetailModal from "@/components/portfolio/ProjectDetailModal";
-import { completedProjects } from "@/lib/portfolioData";
-
-const ALL_CATEGORIES = ["All", ...Array.from(new Set(completedProjects.map((p) => p.category)))];
+import { usePortfolioProjects } from "@/hooks/usePortfolioProjects";
 
 export default function CompletedProjects() {
+  const { projects, loading } = usePortfolioProjects();
   const [activeFilter, setActiveFilter] = useState("All");
   const [selectedProject, setSelectedProject] = useState(null);
 
+  // Only show completed or featured projects
+  const completed = projects.filter(
+    (p) => p.status === "Completed" || p.status === "Featured"
+  );
+
+  const categories = ["All", ...Array.from(new Set(completed.map((p) => p.category)))];
+
   const filtered =
     activeFilter === "All"
-      ? completedProjects
-      : completedProjects.filter((p) => p.category === activeFilter);
+      ? completed
+      : completed.filter((p) => p.category === activeFilter);
 
   return (
     <section id="completed-projects" className="py-20 bg-mint scroll-mt-20">
@@ -31,7 +37,7 @@ export default function CompletedProjects() {
               </span>
             </div>
             <h2 className="font-poppins font-bold text-3xl sm:text-4xl text-slate-dark leading-tight">
-              Delivered Landmarks & Structural Feats
+              Delivered Landmarks &amp; Structural Feats
             </h2>
             <p className="font-sans text-slate-light text-sm sm:text-base mt-4">
               Every project below represents a promise kept — on time, on budget, and beyond expectation.
@@ -40,7 +46,7 @@ export default function CompletedProjects() {
 
           {/* Category Filter Buttons */}
           <div className="flex flex-wrap gap-2 shrink-0">
-            {ALL_CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveFilter(cat)}
@@ -56,18 +62,29 @@ export default function CompletedProjects() {
           </div>
         </div>
 
-        {/* Projects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filtered.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              onViewDetail={setSelectedProject}
-            />
-          ))}
-        </div>
+        {/* Loading state */}
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl h-80 animate-pulse" />
+            ))}
+          </div>
+        )}
 
-        {filtered.length === 0 && (
+        {/* Projects Grid */}
+        {!loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filtered.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onViewDetail={setSelectedProject}
+              />
+            ))}
+          </div>
+        )}
+
+        {!loading && filtered.length === 0 && (
           <div className="text-center py-16 text-slate-light font-sans">
             No projects found in this category.
           </div>

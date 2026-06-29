@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("idle"); // 'idle' | 'loading' | 'success' | 'error'
   const [error, setError] = useState("");
   const [checkingAuth, setCheckingAuth] = useState(true);
 
@@ -61,8 +61,17 @@ export default function AdminLoginPage() {
     );
   }
 
-  // Isolated Authentication API call wrapper
-  const performLogin = async (email, password) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email.trim() || !password) {
+      setError("Please fill in all fields.");
+      setStatus("error");
+      return;
+    }
+
+    setStatus("loading");
+    setError("");
+
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const res = await fetch(`${apiUrl}/api/auth/login`, {
@@ -75,50 +84,20 @@ export default function AdminLoginPage() {
 
       const data = await res.json();
 
-      if (res.ok) {
-        if (typeof window !== "undefined" && data.token) {
-          localStorage.setItem("adminToken", data.token);
+      if (res.ok && data.success) {
+        setStatus("success");
+        if (typeof window !== "undefined" && data.data?.token) {
+          localStorage.setItem("adminToken", data.data.token);
         }
-        return { success: true, data };
+        router.push("/admin");
       } else {
-        return { success: false, error: data.message || "Invalid email or password" };
+        setStatus("error");
+        setError(data.message || "Invalid email or password");
       }
     } catch (err) {
-      console.warn("Backend API not reachable, falling back to mock authentication:", err);
-      
-      // Simulate network request latency
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Mock credentials fallback for local testing / development
-      if (email === "admin@iconstructions.com" && password === "admin123") {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("adminToken", "mock-jwt-token-xyz");
-        }
-        return { success: true, message: "Mock login successful" };
-      } else {
-        return { success: false, error: "Invalid credentials. Try admin@iconstructions.com / admin123" };
-      }
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    if (!email.trim() || !password) {
-      setError("Please fill in all fields.");
-      setLoading(false);
-      return;
-    }
-
-    const result = await performLogin(email, password);
-
-    if (result.success) {
-      router.push("/admin");
-    } else {
-      setError(result.error);
-      setLoading(false);
+      console.error("Login failed:", err);
+      setStatus("error");
+      setError("Failed to connect to the server. Please check your connection and try again.");
     }
   };
 
@@ -225,10 +204,10 @@ export default function AdminLoginPage() {
           <div className="pt-2">
             <button
               type="submit"
-              disabled={loading}
+              disabled={status === "loading"}
               className="w-full bg-primary hover:bg-primary-light disabled:bg-primary-light text-mint font-poppins font-bold py-3.5 px-6 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
             >
-              {loading ? "Verifying Credentials..." : "Access Administrator Panel"}
+              {status === "loading" ? "Verifying Credentials..." : "Access Administrator Panel"}
             </button>
           </div>
         </form>

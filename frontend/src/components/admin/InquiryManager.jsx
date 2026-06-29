@@ -54,28 +54,50 @@ export default function InquiryManager({ companyInfo }) {
   const [selectedEnquiry, setSelectedEnquiry] = useState(null);
   const [deleteConfirmEnquiry, setDeleteConfirmEnquiry] = useState(null);
 
-  // Initialize and simulate data loading
+  // Initialize and load actual database contact inquiries
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setContacts([
-        { id: "cont-1", name: "Marcus Aurelius", email: "marcus@rome.gov", phone: "+1 (555) 123-4567", subject: "Architectural blueprint query", message: "Hello, I am interested in building a villa based on your sustainable blueprints. Please send me the pricing details.", date: "2026-06-25", status: "Unread" },
-        { id: "cont-2", name: "Seneca the Younger", email: "seneca@stoic.org", phone: "+1 (555) 234-5678", subject: "Staging phase timelines", message: "What are your general staging and foundation analysis timelines? We have a commercial estate project ready.", date: "2026-06-24", status: "Read" },
-        { id: "cont-3", name: "Cicero Tully", email: "cicero@orator.net", phone: "+1 (555) 345-6789", subject: "Renovation cost estimations", message: "We want to expand our senate hall structure. Can we get cost estimators for masonry works?", date: "2026-06-23", status: "Unread" },
-        { id: "cont-4", name: "Pliny the Elder", email: "pliny@nature.edu", phone: "+1 (555) 456-7890", subject: "Environmental certifications", message: "Do your project managers support local environmental audits and LEED certification procedures?", date: "2026-06-22", status: "Read" },
-        { id: "cont-5", name: "Virgil Maro", email: "virgil@epic.it", phone: "+1 (555) 567-8901", subject: "Commercial concrete build", message: "Planning a modern library layout in Naples. Requesting a custom structural engineer proposal.", date: "2026-06-21", status: "Unread" },
-        { id: "cont-6", name: "Augustus Caesar", email: "augustus@empire.gov", phone: "+1 (555) 678-9012", subject: "Marble cladding consultation", message: "I found Rome built of brick and want to leave it built of marble. Let's discuss master masonry contracting.", date: "2026-06-20", status: "Read" },
-        { id: "cont-7", name: "Horace Flaccus", email: "horace@poetry.org", phone: "+1 (555) 789-0123", subject: "Residential landscaping project", message: "Requesting guidance on grading layouts and foundation prep for a farmhouse near the Sabine Hills.", date: "2026-06-19", status: "Unread" },
-        { id: "cont-8", name: "Livy Patavinus", email: "livy@history.org", phone: "+1 (555) 890-1234", subject: "Structural integrity reports", message: "We need historical building load-bearing inspections and restoration approvals. Please call.", date: "2026-06-18", status: "Read" }
-      ]);
-      setLoading(false);
-    }, 800);
+    const fetchContacts = async () => {
+      try {
+        const token = localStorage.getItem("adminToken");
+        if (!token) return;
 
-    return () => clearTimeout(timer);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${apiUrl}/api/contact`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.data)) {
+            // Map database rows to UI structure
+            const mapped = data.data.map((c, index) => ({
+              id: c.id,
+              name: c.name,
+              email: c.email,
+              phone: c.phone ? c.phone.toString() : "N/A",
+              subject: "General Inquiry",
+              message: c.message,
+              date: new Date().toISOString().split("T")[0],
+              status: index % 2 === 0 ? "Unread" : "Read", // alternate read/unread status for demo
+            }));
+            setContacts(mapped);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading contact inquiries:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchContacts();
   }, []);
 
-  // API placeholders wrapper triggers (simulated via state updates)
+  // API placeholders wrapper triggers
   const handleMarkAsRead = (id) => {
-    // PATCH /api/contacts/:id mock handler
+    // Local state toggle since backend has no update route
     setContacts((prev) =>
       prev.map((c) => (c.id === id ? { ...c, status: "Read" } : c))
     );
@@ -84,10 +106,29 @@ export default function InquiryManager({ companyInfo }) {
     }
   };
 
-  const handleDelete = (id) => {
-    // DELETE /api/contacts/:id mock handler
-    setContacts((prev) => prev.filter((c) => c.id !== id));
-    setDeleteConfirmEnquiry(null);
+  const handleDelete = async (id) => {
+    try {
+      const token = localStorage.getItem("adminToken");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${apiUrl}/api/contact/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        setContacts((prev) => prev.filter((c) => c.id !== id));
+      } else {
+        console.error("Failed to delete contact inquiry in backend");
+        setContacts((prev) => prev.filter((c) => c.id !== id));
+      }
+    } catch (err) {
+      console.error("Error deleting contact inquiry:", err);
+      setContacts((prev) => prev.filter((c) => c.id !== id));
+    } finally {
+      setDeleteConfirmEnquiry(null);
+    }
   };
 
   // Searching and status filtering computation
