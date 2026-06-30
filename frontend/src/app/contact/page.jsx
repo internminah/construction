@@ -31,22 +31,22 @@ export default async function ContactPage() {
       <Navbar companyInfo={company} navLinks={links} />
       <main className="flex-grow">
         {/* 1. Hero Section */}
-        <ContactHero />
+        <ContactHero companyInfo={company} />
 
         {/* 2. Contact Information Cards */}
-        <ContactInfo />
+        <ContactInfo companyInfo={company} />
 
         {/* 3. Contact Form */}
         <ContactForm />
 
         {/* 4. Google Map Location */}
-        <ContactMap />
+        <ContactMap companyInfo={company} />
 
         {/* 5. Social Media Links */}
         <SocialLinks />
 
         {/* 6. Call to Action */}
-        <ContactCTA />
+        <ContactCTA companyInfo={company} />
       </main>
       <Footer
         companyInfo={company}

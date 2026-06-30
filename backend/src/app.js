@@ -11,6 +11,7 @@ const projectRoutes = require('./routes/projectRoutes');
 const quotationRoutes = require('./routes/quotationRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const testimonialRoutes = require('./routes/testimonialRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 
 // Import Error Handler Middleware
 const { errorHandler } = require('./middleware/errorHandler');
@@ -38,6 +39,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/quotations', quotationRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/testimonials', testimonialRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Global Error Handler Middleware
 app.use(errorHandler);

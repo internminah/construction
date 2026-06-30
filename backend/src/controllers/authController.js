@@ -31,4 +31,14 @@ const logout = async (req, res, next) => {
   }
 };
 
-module.exports = { login, logout };
+// ─── GET /api/auth/me ──────────────────────────────────────────────
+// Protected — Retrieve logged-in admin user details
+const getMe = async (req, res, next) => {
+  try {
+    return sendSuccess(res, 200, 'User profile retrieved successfully', { admin: req.admin });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { login, logout, getMe };

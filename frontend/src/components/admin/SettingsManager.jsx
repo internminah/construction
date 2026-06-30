@@ -31,37 +31,10 @@ export default function SettingsManager({ companyInfo }) {
   const [verboseLogging, setVerboseLogging] = useState(false);
   const [backupInterval, setBackupInterval] = useState("daily");
 
-  // Load persistence if available in browser
+  // Load persistence if available in browser (system preferences only)
   useEffect(() => {
     const timer = setTimeout(() => {
       if (typeof window !== "undefined") {
-        const storedName = localStorage.getItem("settings_companyName");
-        if (storedName) setCompanyName(storedName);
-        
-        const storedTagline = localStorage.getItem("settings_tagline");
-        if (storedTagline) setTagline(storedTagline);
-
-        const storedEmail = localStorage.getItem("settings_email");
-        if (storedEmail) setEmail(storedEmail);
-
-        const storedPhone = localStorage.getItem("settings_phone");
-        if (storedPhone) setPhone(storedPhone);
-
-        const storedAddress = localStorage.getItem("settings_address");
-        if (storedAddress) setAddress(storedAddress);
-
-        const storedMap = localStorage.getItem("settings_mapHref");
-        if (storedMap) setMapHref(storedMap);
-
-        const storedYear = localStorage.getItem("settings_foundedYear");
-        if (storedYear) setFoundedYear(parseInt(storedYear));
-
-        const storedDesc = localStorage.getItem("settings_description");
-        if (storedDesc) setDescription(storedDesc);
-
-        const storedDetailedDesc = localStorage.getItem("settings_detailedDescription");
-        if (storedDetailedDesc) setDetailedDescription(storedDetailedDesc);
-
         const storedMaintenance = localStorage.getItem("settings_maintenanceMode");
         if (storedMaintenance) setMaintenanceMode(storedMaintenance === "true");
 
@@ -90,21 +63,55 @@ export default function SettingsManager({ companyInfo }) {
     }, 4000);
   };
 
-  // Submit profile handler
-  const handleSaveProfile = (e) => {
+  // Submit profile handler to database
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    if (typeof window !== "undefined") {
-      localStorage.setItem("settings_companyName", companyName);
-      localStorage.setItem("settings_tagline", tagline);
-      localStorage.setItem("settings_email", email);
-      localStorage.setItem("settings_phone", phone);
-      localStorage.setItem("settings_address", address);
-      localStorage.setItem("settings_mapHref", mapHref);
-      localStorage.setItem("settings_foundedYear", foundedYear.toString());
-      localStorage.setItem("settings_description", description);
-      localStorage.setItem("settings_detailedDescription", detailedDescription);
+    try {
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        showNotification("Not authorized. Please log in again.", "error");
+        return;
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${apiUrl}/api/settings`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: companyName,
+          tagline,
+          description,
+          detailedDescription,
+          foundedYear,
+          address,
+          email,
+          phone,
+          mapHref
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          showNotification("Company profile details updated successfully!");
+          // Reload page to propagate new settings immediately across the layout
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } else {
+          showNotification(data.message || "Failed to update settings.", "error");
+        }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        showNotification(errData.message || "Failed to save changes.", "error");
+      }
+    } catch (err) {
+      console.error("Error saving settings:", err);
+      showNotification("Network error. Failed to save changes.", "error");
     }
-    showNotification("Company profile details updated successfully!");
   };
 
   // Submit security credentials handler
