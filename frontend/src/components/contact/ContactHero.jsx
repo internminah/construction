@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { contactInfo } from "@/data/contactData";
 
-export default function ContactHero() {
+export default function ContactHero({ companyInfo }) {
   return (
     <section className="relative h-[60vh] min-h-[420px] w-full flex items-center justify-center overflow-hidden bg-slate-900">
       {/* Background Image */}

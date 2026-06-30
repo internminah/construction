@@ -91,6 +91,16 @@ export default function AdminLayout({ children, companyInfo, activeTab }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [adminUser, setAdminUser] = useState(null);
+
+  const getInitials = (name) => {
+    if (!name) return "SA";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.trim().substring(0, 2).toUpperCase();
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -98,8 +108,31 @@ export default function AdminLayout({ children, companyInfo, activeTab }) {
       if (!token) {
         router.push("/admin/login");
       } else {
-        setIsAuthenticated(true);
-        setCheckingAuth(false);
+        const fetchProfile = async () => {
+          try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const res = await fetch(`${apiUrl}/api/auth/me`, {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success && data.data?.admin) {
+                setAdminUser(data.data.admin);
+              }
+            } else if (res.status === 401) {
+              localStorage.removeItem("adminToken");
+              router.push("/admin/login");
+            }
+          } catch (err) {
+            console.error("Failed to fetch admin profile:", err);
+          } finally {
+            setIsAuthenticated(true);
+            setCheckingAuth(false);
+          }
+        };
+        fetchProfile();
       }
     }
   }, [router]);
@@ -278,11 +311,15 @@ export default function AdminLayout({ children, companyInfo, activeTab }) {
 
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
-              <span className="text-xs font-poppins font-bold text-slate-dark block">System Administrator</span>
-              <span className="text-[10px] font-sans text-primary font-semibold block uppercase tracking-wider">Super Admin</span>
+              <span className="text-xs font-poppins font-bold text-slate-dark block">
+                {adminUser?.username || "System Administrator"}
+              </span>
+              <span className="text-[10px] font-sans text-primary font-semibold block uppercase tracking-wider">
+                {adminUser?.role ? (adminUser.role === 'admin' ? 'Super Admin' : adminUser.role) : "Super Admin"}
+              </span>
             </div>
             <div className="h-10 w-10 bg-primary text-mint rounded-full flex items-center justify-center font-poppins font-bold text-sm shadow-md border-2 border-mint-dark">
-              SA
+              {getInitials(adminUser?.username || "System Administrator")}
             </div>
           </div>
         </header>

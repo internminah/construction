@@ -130,7 +130,7 @@ export const companyInfo: CompanyInfo = {
   address: "102 Skyline Heights, Architecture Blvd, NY 10001",
   email: "info@iconstructions.com",
   phone: "+1 (555) 123-4567",
-  mapHref: "https://maps.google.com",
+  mapHref: "https://www.google.com/maps/place/I+constructions/@15.8847063,78.1185717,6z",
 };
 
 export const navLinks: NavLink[] = [
@@ -320,7 +320,7 @@ export const contactInfo: ContactCard[] = [
     title: "Headquarters Office",
     detail: "102 Skyline Heights, Architecture Blvd, NY 10001",
     actionLabel: "Get Directions",
-    actionHref: "https://maps.google.com",
+    actionHref: "https://www.google.com/maps/place/I+constructions/@15.8847063,78.1185717,6z",
     iconName: "MapPin",
   },
   {
@@ -439,7 +439,29 @@ export const dashboardStats: DashboardStat[] = [
 // ==========================================
 
 export async function getCompanyInfo(): Promise<CompanyInfo> {
-  return new Promise((resolve) => setTimeout(() => resolve(companyInfo), 50));
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/settings`, {
+      next: { revalidate: 0 } // Disable Next.js caching to ensure updates reflect immediately
+    });
+    if (!res.ok) throw new Error("API response not ok");
+    const data = await res.json();
+    if (data.success && data.data) {
+      return {
+        name: data.data.name,
+        tagline: data.data.tagline,
+        description: data.data.description,
+        detailedDescription: data.data.detailed_description || data.data.detailedDescription,
+        foundedYear: Number(data.data.founded_year || data.data.foundedYear),
+        address: data.data.address,
+        email: data.data.email,
+        phone: data.data.phone,
+        mapHref: data.data.map_href || data.data.mapHref,
+      };
+    }
+  } catch (error) {
+    console.error("Failed to fetch company info, using static backup:", error);
+  }
+  return companyInfo;
 }
 
 export async function getNavLinks(): Promise<NavLink[]> {

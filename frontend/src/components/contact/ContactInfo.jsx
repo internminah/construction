@@ -1,32 +1,38 @@
 import * as Icons from "@/components/common/Icons";
-import { contactInfo } from "@/data/contactData";
+import { contactInfo as defaultContactInfo } from "@/data/contactData";
 
-export default function ContactInfo() {
+export default function ContactInfo({ companyInfo }) {
   const { ExternalLink } = Icons;
+
+  // Use dynamic companyInfo from settings if provided, else fall back to static contactData
+  const phone = companyInfo?.phone || defaultContactInfo.phone;
+  const email = companyInfo?.email || defaultContactInfo.email;
+  const address = companyInfo?.address || defaultContactInfo.address;
+  const mapHref = companyInfo?.mapHref || "https://www.google.com/maps/place/I+constructions/@15.8847063,78.1185717,6z";
 
   const cards = [
     {
       id: "info-phone",
       title: "Phone Support",
-      detail: contactInfo.phone,
+      detail: phone,
       actionLabel: "Call Now",
-      actionHref: `tel:${contactInfo.phone.replace(/[^+\d]/g, "")}`,
+      actionHref: `tel:${phone.replace(/[^+\d]/g, "")}`,
       iconName: "PhoneCall",
     },
     {
       id: "info-email",
       title: "Email Queries",
-      detail: contactInfo.email,
+      detail: email,
       actionLabel: "Send Email",
-      actionHref: `mailto:${contactInfo.email}`,
+      actionHref: `mailto:${email}`,
       iconName: "Mail",
     },
     {
       id: "info-address",
       title: "Headquarters Office",
-      detail: contactInfo.address,
+      detail: address,
       actionLabel: "Get Directions",
-      actionHref: "https://maps.google.com",
+      actionHref: mapHref,
       iconName: "MapPin",
     },
   ];

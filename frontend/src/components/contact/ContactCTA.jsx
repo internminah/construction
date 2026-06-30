@@ -1,7 +1,8 @@
 import { PhoneCall } from "@/components/common/Icons";
-import { contactInfo } from "@/data/contactData";
+import { contactInfo as defaultContactInfo } from "@/data/contactData";
 
-export default function ContactCTA() {
+export default function ContactCTA({ companyInfo }) {
+  const phone = companyInfo?.phone || defaultContactInfo.phone;
   return (
     <section className="relative py-24 bg-primary overflow-hidden">
       {/* Dynamic Background Glassmorphism Gradients */}
@@ -34,7 +35,7 @@ export default function ContactCTA() {
             Get a Quote
           </a>
           <a
-            href={`tel:${contactInfo.phone.replace(/[^+\d]/g, "")}`}
+            href={`tel:${phone.replace(/[^+\d]/g, "")}`}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 font-poppins font-semibold text-base rounded-lg text-white border border-white/30 hover:bg-white/10 transition-all duration-300"
           >
             <PhoneCall className="h-5 w-5" />

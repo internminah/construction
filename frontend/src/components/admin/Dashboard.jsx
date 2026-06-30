@@ -12,25 +12,28 @@ import AdminLayout from "./AdminLayout";
 
 export default function Dashboard({ companyInfo, stats, projects, reviews }) {
   const [enquiries, setEnquiries] = useState([]);
+  const [quotations, setQuotations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [adminUser, setAdminUser] = useState(null);
 
   useEffect(() => {
-    const fetchEnquiries = async () => {
+    const fetchDashboardData = async () => {
       try {
         const token = localStorage.getItem("adminToken");
         if (!token) return;
 
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-        const res = await fetch(`${apiUrl}/api/contact`, {
+        
+        // Fetch Enquiries
+        const contactRes = await fetch(`${apiUrl}/api/contact`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        if (res.ok) {
-          const data = await res.json();
+        if (contactRes.ok) {
+          const data = await contactRes.json();
           if (data.success && Array.isArray(data.data)) {
-            // Map database columns to support UI expected fields
             const mapped = data.data.map((item) => ({
               id: item.id,
               name: item.name,
@@ -43,21 +46,63 @@ export default function Dashboard({ companyInfo, stats, projects, reviews }) {
             setEnquiries(mapped);
           }
         }
+
+        // Fetch Quotations
+        const quotationsRes = await fetch(`${apiUrl}/api/quotations`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (quotationsRes.ok) {
+          const data = await quotationsRes.json();
+          if (data.success && Array.isArray(data.data)) {
+            setQuotations(data.data);
+          }
+        }
       } catch (err) {
-        console.error("Failed to fetch enquiries:", err);
+        console.error("Failed to fetch dashboard statistics:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEnquiries();
+    fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("adminToken");
+        if (!token) return;
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${apiUrl}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data?.admin) {
+            setAdminUser(data.data.admin);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch admin profile:", err);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const displayName = adminUser?.username || "Super Admin";
+
+  const ratingAverage = reviews && reviews.length > 0
+    ? (reviews.reduce((sum, rev) => sum + (rev.rating || 0), 0) / reviews.length).toFixed(1)
+    : "0.0";
 
   const activities = [
     {
       id: "act-1",
       time: "10 mins ago",
-      user: "Super Admin",
+      user: displayName,
       action: "Approved review by Jonathan Sterling",
       badgeColor: "bg-emerald-100 text-emerald-800"
     },
@@ -71,7 +116,7 @@ export default function Dashboard({ companyInfo, stats, projects, reviews }) {
     {
       id: "act-3",
       time: "3 hours ago",
-      user: "Super Admin",
+      user: displayName,
       action: "Updated details for Residential Construction",
       badgeColor: "bg-emerald-100 text-emerald-800"
     },
@@ -85,7 +130,7 @@ export default function Dashboard({ companyInfo, stats, projects, reviews }) {
     {
       id: "act-5",
       time: "2 days ago",
-      user: "Super Admin",
+      user: displayName,
       action: "Added new landmark project 'Bespoke Glass Villa'",
       badgeColor: "bg-emerald-100 text-emerald-800"
     }
@@ -97,7 +142,7 @@ export default function Dashboard({ companyInfo, stats, projects, reviews }) {
       <div className="bg-white border border-primary/5 rounded-2xl p-6 sm:p-8 shadow-md relative overflow-hidden flex flex-col justify-between min-h-[140px]">
         <div className="relative z-10 max-w-2xl">
           <h2 className="font-poppins font-bold text-2xl text-slate-dark sm:text-3xl">
-            Welcome back, Administrator!
+            Welcome back, {adminUser?.username || "Administrator"}!
           </h2>
           <p className="font-sans text-slate-light text-sm mt-2 leading-relaxed">
             Here is your overview of I Constructions operations. All services are active, database connects cleanly, and API routes are listening.
@@ -123,9 +168,6 @@ export default function Dashboard({ companyInfo, stats, projects, reviews }) {
               <Mail className="h-5 w-5" />
             </div>
           </div>
-          <span className="text-[11px] font-sans font-semibold text-primary block mt-4">
-            +12.5% increase vs last month
-          </span>
         </div>
 
         {/* KPI 2: Total Projects */}
@@ -139,9 +181,6 @@ export default function Dashboard({ companyInfo, stats, projects, reviews }) {
               <Briefcase className="h-5 w-5" />
             </div>
           </div>
-          <span className="text-[11px] font-sans font-semibold text-primary block mt-4">
-            +2 added recently
-          </span>
         </div>
 
         {/* KPI 3: Total Reviews */}
@@ -156,24 +195,21 @@ export default function Dashboard({ companyInfo, stats, projects, reviews }) {
             </div>
           </div>
           <span className="text-[11px] font-sans font-semibold text-primary block mt-4">
-            4.9/5 rating average
+            {ratingAverage}/5 rating average
           </span>
         </div>
 
-        {/* KPI 4: Website Statistics */}
+        {/* KPI 4: Total Quotations */}
         <div className="bg-white border border-primary/5 rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow">
           <div className="flex justify-between items-start">
             <div>
-              <span className="text-xs font-semibold text-slate-light/75 block uppercase tracking-wider">Website Visitors</span>
-              <span className="font-poppins font-extrabold text-3xl text-slate-dark block mt-1.5">1,240</span>
+              <span className="text-xs font-semibold text-slate-light/75 block uppercase tracking-wider">Total Quotations</span>
+              <span className="font-poppins font-extrabold text-3xl text-slate-dark block mt-1.5">{quotations.length}</span>
             </div>
             <div className="p-3 bg-primary/10 text-primary rounded-xl">
               <Activity className="h-5 w-5" />
             </div>
           </div>
-          <span className="text-[11px] font-sans font-semibold text-primary block mt-4">
-            +8.4% pageviews today
-          </span>
         </div>
 
       </div>

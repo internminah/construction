@@ -78,6 +78,25 @@ const UpdateStatusIcon = (props) => (
   </svg>
 );
 
+const UploadIcon = (props) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={props.className}
+  >
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="15" />
+  </svg>
+);
+
 // Initial mock project tracking dataset representing GET /api/projects initial dump
 const initialMockProjects = [
   {
@@ -166,6 +185,18 @@ export default function ProjectTracker({ companyInfo }) {
   const [formDescription, setFormDescription] = useState("");
   const [servicesList, setServicesList] = useState([]);
   const [formServiceId, setFormServiceId] = useState("");
+  const [formImage, setFormImage] = useState("");
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Initialize and load actual database projects and services
   useEffect(() => {
@@ -193,7 +224,8 @@ export default function ProjectTracker({ companyInfo }) {
             status: p.status || "Ongoing",
             progress: p.progress !== undefined ? p.progress : (p.status === "Completed" ? 100 : 45),
             description: p.description || "",
-            service_id: p.service_id ? p.service_id.toString() : ""
+            service_id: p.service_id ? p.service_id.toString() : "",
+            image: p.image || ""
           }));
           setProjects(mapped);
         }
@@ -236,7 +268,7 @@ export default function ProjectTracker({ companyInfo }) {
           project_name: formTitle,
           category: determineCategory(formServiceId),
           description: formDescription,
-          image: "",
+          image: formImage || "",
           status: formStatus,
           service_id: formServiceId ? parseInt(formServiceId) : null
         })
@@ -250,7 +282,8 @@ export default function ProjectTracker({ companyInfo }) {
           status: created.status,
           progress: parseInt(formProgress) || 0,
           description: created.description,
-          service_id: created.service_id ? created.service_id.toString() : ""
+          service_id: created.service_id ? created.service_id.toString() : "",
+          image: created.image || ""
         };
         setProjects((prev) => [newProject, ...prev]);
         setAddModalOpen(false);
@@ -278,7 +311,7 @@ export default function ProjectTracker({ companyInfo }) {
           project_name: formTitle,
           category: determineCategory(formServiceId),
           description: formDescription,
-          image: "",
+          image: formImage,
           status: formStatus,
           service_id: formServiceId ? parseInt(formServiceId) : null
         })
@@ -292,7 +325,8 @@ export default function ProjectTracker({ companyInfo }) {
           status: updatedDb.status,
           progress: parseInt(formProgress) || 0,
           description: updatedDb.description,
-          service_id: updatedDb.service_id ? updatedDb.service_id.toString() : ""
+          service_id: updatedDb.service_id ? updatedDb.service_id.toString() : "",
+          image: updatedDb.image || ""
         };
         setProjects((prev) =>
           prev.map((p) => (p.id === editProject.id ? updated : p))
@@ -322,7 +356,7 @@ export default function ProjectTracker({ companyInfo }) {
           project_name: statusUpdateProject.title,
           category: determineCategory(statusUpdateProject.service_id),
           description: statusUpdateProject.description,
-          image: "",
+          image: statusUpdateProject.image || "",
           status: formStatus,
           service_id: statusUpdateProject.service_id ? parseInt(statusUpdateProject.service_id) : null
         })
@@ -375,6 +409,7 @@ export default function ProjectTracker({ companyInfo }) {
     setFormProgress(project.progress);
     setFormDescription(project.description);
     setFormServiceId(project.service_id || "");
+    setFormImage(project.image || "");
   };
 
   const openStatusUpdateModal = (project) => {
@@ -389,6 +424,7 @@ export default function ProjectTracker({ companyInfo }) {
     setFormProgress(0);
     setFormDescription("");
     setFormServiceId("");
+    setFormImage("");
   };
 
   // Searching and Filtering
@@ -574,6 +610,7 @@ export default function ProjectTracker({ companyInfo }) {
                 <table className="min-w-full divide-y divide-mint-dark/50 text-sm">
                   <thead>
                     <tr className="text-left text-xs text-slate-light/75 uppercase font-poppins font-bold tracking-wider">
+                      <th className="py-3 px-2">Project Thumbnail</th>
                       <th className="py-3 px-2">Project Details</th>
                       <th className="py-3 px-2">Associated Service</th>
                       <th className="py-3 px-2">Progress</th>
@@ -584,6 +621,22 @@ export default function ProjectTracker({ companyInfo }) {
                   <tbody className="divide-y divide-mint-dark/40 font-sans">
                     {currentItems.map((item) => (
                       <tr key={item.id} className="hover:bg-mint/20 transition-colors">
+                        {/* Project Thumbnail Image */}
+                        <td className="py-4 px-2">
+                          <div className="h-12 w-16 rounded-lg overflow-hidden border border-mint-dark shrink-0 relative bg-mint">
+                            {item.image ? (
+                              <img
+                                src={item.image}
+                                alt={item.title}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-primary/40 bg-mint">
+                                <Briefcase className="h-5 w-5" />
+                              </div>
+                            )}
+                          </div>
+                        </td>
                         {/* Name */}
                         <td className="py-4 px-2">
                           <span className="block font-poppins font-bold text-slate-dark text-sm">{item.title}</span>
@@ -721,6 +774,16 @@ export default function ProjectTracker({ companyInfo }) {
               </span>
             </div>
 
+            {selectedProject.image && (
+              <div className="h-48 w-full rounded-xl overflow-hidden border border-mint-dark relative bg-mint">
+                <img
+                  src={selectedProject.image}
+                  alt={selectedProject.title}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            )}
+
             <div className="space-y-4 text-sm font-sans">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -830,6 +893,39 @@ export default function ProjectTracker({ companyInfo }) {
                 </div>
               </div>
 
+              {/* Project Image Upload UI */}
+              <div>
+                <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Project Image Asset</label>
+                <div className="mt-2 flex flex-col items-center justify-center border-2 border-dashed border-primary/20 bg-mint/30 rounded-xl p-4 text-center">
+                  {formImage ? (
+                    <div className="relative w-full h-32 rounded-lg overflow-hidden">
+                      <img src={formImage} alt="Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setFormImage("")}
+                        className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-500 cursor-pointer"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center cursor-pointer w-full h-28">
+                      <UploadIcon className="text-primary/70 h-8 w-8 mb-2" />
+                      <span className="text-xs font-poppins font-semibold text-slate-dark">Click to upload image file</span>
+                      <span className="text-[10px] text-slate-light mt-1">Supports PNG, JPG, WebP (Simulated Upload)</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Project Description *</label>
                 <textarea
@@ -923,6 +1019,39 @@ export default function ProjectTracker({ companyInfo }) {
                     onChange={(e) => setFormProgress(e.target.value)}
                     className="w-full mt-3 h-2 bg-mint rounded-lg appearance-none cursor-pointer accent-primary"
                   />
+                </div>
+              </div>
+
+              {/* Project Image Upload UI */}
+              <div>
+                <label className="text-xs font-poppins font-bold text-slate-light uppercase tracking-wider block">Project Image Asset</label>
+                <div className="mt-2 flex flex-col items-center justify-center border-2 border-dashed border-primary/20 bg-mint/30 rounded-xl p-4 text-center">
+                  {formImage ? (
+                    <div className="relative w-full h-32 rounded-lg overflow-hidden">
+                      <img src={formImage} alt="Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setFormImage("")}
+                        className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-500 cursor-pointer"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center cursor-pointer w-full h-28">
+                      <UploadIcon className="text-primary/70 h-8 w-8 mb-2" />
+                      <span className="text-xs font-poppins font-semibold text-slate-dark">Click to upload image file</span>
+                      <span className="text-[10px] text-slate-light mt-1">Supports PNG, JPG, WebP (Simulated Upload)</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
                 </div>
               </div>
 
