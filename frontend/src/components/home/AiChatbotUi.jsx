@@ -49,10 +49,19 @@ export default function AiChatbotUi({ companyInfo }) {
       id: "msg-init",
       sender: "bot",
       text: "Hello! Welcome to I Constructions. How can I help you build your dream project today?",
-      time: new Date(),
+      time: null,
     },
   ]);
   const [inputValue, setInputValue] = useState("");
+
+  // Initialize chatbot timestamp on client mount to avoid hydration mismatch
+  useEffect(() => {
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === "msg-init" ? { ...msg, time: new Date() } : msg
+      )
+    );
+  }, []);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
@@ -193,10 +202,12 @@ export default function AiChatbotUi({ companyInfo }) {
                       isBot ? "text-slate-light/60" : "text-white/60"
                     }`}
                   >
-                    {msg.time.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {msg.time
+                      ? msg.time.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : ""}
                   </span>
                 </div>
               </div>

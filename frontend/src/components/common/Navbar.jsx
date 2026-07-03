@@ -35,11 +35,10 @@ export default function Navbar({
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
-        isScrolled
+      className={`sticky top-0 z-50 w-full transition-all duration-300 ${isScrolled
           ? "bg-white/90 backdrop-blur-md shadow-md border-b border-mint-dark"
           : "bg-transparent border-b border-transparent"
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
@@ -61,11 +60,10 @@ export default function Navbar({
                 <Link
                   key={link.name}
                   href={link.href}
-                  className={`relative font-poppins font-medium text-sm transition-colors duration-300 py-2 ${
-                    active
+                  className={`relative font-poppins font-medium text-sm transition-colors duration-300 py-2 ${active
                       ? "text-primary font-bold"
                       : "text-slate-light hover:text-primary"
-                  }`}
+                    }`}
                 >
                   {link.name}
                   {active && (
@@ -89,7 +87,10 @@ export default function Navbar({
           {/* Mobile Menu Button */}
           <div className="md:hidden">
             <button
-              onClick={() => setIsOpen(!isOpen)}
+              onClick={() => {
+                console.log("Hamburger clicked");
+                setIsOpen(!isOpen);
+              }}
               className="p-2 rounded-lg text-slate-light hover:text-primary hover:bg-mint-dark/50 transition-colors focus:outline-none"
               aria-label="Toggle Menu"
             >
@@ -101,15 +102,13 @@ export default function Navbar({
 
       {/* Mobile Drawer menu */}
       <div
-        className={`md:hidden fixed inset-0 z-40 bg-slate-dark/40 backdrop-blur-sm transition-opacity duration-300 ${
-          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
+        className={`md:hidden fixed inset-0 z-40 bg-slate-dark/40 backdrop-blur-sm transition-all duration-300 ${isOpen ? "opacity-100 pointer-events-auto visible" : "opacity-0 pointer-events-none invisible"
+          }`}
         onClick={() => setIsOpen(false)}
       >
         <div
-          className={`fixed right-0 top-0 h-screen w-3/4 max-w-sm bg-white shadow-2xl p-6 flex flex-col justify-between transition-transform duration-300 ease-in-out ${
-            isOpen ? "translate-x-0" : "translate-x-full"
-          }`}
+          className={`fixed right-0 top-0 h-screen w-3/4 max-w-sm bg-white shadow-2xl p-6 flex flex-col justify-between transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
+            }`}
           onClick={(e) => e.stopPropagation()}
         >
           <div>
@@ -136,11 +135,10 @@ export default function Navbar({
                     key={link.name}
                     href={link.href}
                     onClick={() => setIsOpen(false)}
-                    className={`font-poppins font-semibold text-lg py-2 px-3 rounded-lg transition-colors ${
-                      active
+                    className={`font-poppins font-semibold text-lg py-2 px-3 rounded-lg transition-colors ${active
                         ? "bg-mint text-primary"
                         : "text-slate-light hover:bg-mint/50 hover:text-primary"
-                    }`}
+                      }`}
                   >
                     {link.name}
                   </Link>
