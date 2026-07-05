@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export default function ContactHero({ companyInfo }) {
   return (
     <section className="relative h-[60vh] min-h-[420px] w-full flex items-center justify-center overflow-hidden bg-slate-900">
@@ -35,16 +33,7 @@ export default function ContactHero({ companyInfo }) {
         </div>
       </div>
 
-      {/* Breadcrumb */}
-      <div className="absolute bottom-16 left-0 right-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center gap-2 text-xs text-white/50 font-poppins font-medium">
-            <Link href="/" className="hover:text-white transition-colors">Home</Link>
-            <span>/</span>
-            <span className="text-accent">Contact</span>
-          </nav>
-        </div>
-      </div>
+
 
       {/* Bottom SVG Wave */}
       <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none">

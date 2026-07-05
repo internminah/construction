@@ -3,7 +3,7 @@ import { ArrowRight } from "@/components/common/Icons";
 
 export default function PortfolioHero() {
   return (
-    <section className="relative h-[60vh] min-h-[420px] w-full flex items-center justify-center overflow-hidden bg-slate-900">
+    <section className="relative min-h-[75vh] lg:min-h-[600px] w-full flex items-center justify-center overflow-hidden bg-slate-900">
       {/* Background Image */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105"
@@ -17,7 +17,7 @@ export default function PortfolioHero() {
       <div className="absolute inset-0 bg-black/35" />
 
       {/* Hero Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left w-full">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 text-left w-full">
         <div className="max-w-3xl">
           {/* Animated Badge */}
           <span className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-semibold bg-accent/20 text-accent border border-accent/30 uppercase tracking-widest mb-6 animate-pulse">
@@ -52,16 +52,7 @@ export default function PortfolioHero() {
         </div>
       </div>
 
-      {/* Breadcrumb */}
-      <div className="absolute bottom-16 left-0 right-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center gap-2 text-xs text-white/50 font-poppins font-medium">
-            <Link href="/" className="hover:text-white transition-colors">Home</Link>
-            <span>/</span>
-            <span className="text-accent">Portfolio</span>
-          </nav>
-        </div>
-      </div>
+
 
       {/* Bottom SVG Wave */}
       <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none">
