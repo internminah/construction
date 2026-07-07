@@ -23,7 +23,10 @@ class Project {
     query += ' ORDER BY id ASC';
 
     const result = await db.query(query, params);
-    return result.rows;
+    return result.rows.map(row => ({
+      ...row,
+      progress: row.status === 'Completed' ? 100 : (row.status === 'In Progress' ? 50 : 45)
+    }));
   }
 
   static async findById(id) {
@@ -31,7 +34,11 @@ class Project {
       'SELECT id, project_name, category, description, image, status, service_id FROM public.portfolio WHERE id = $1',
       [id]
     );
-    return result.rows[0] || null;
+    const row = result.rows[0];
+    if (row) {
+      row.progress = row.status === 'Completed' ? 100 : (row.status === 'In Progress' ? 50 : 45);
+    }
+    return row || null;
   }
 
   static async create({ project_name, category, description, image, status, service_id }) {
@@ -39,7 +46,11 @@ class Project {
       'INSERT INTO public.portfolio (project_name, category, description, image, status, service_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, project_name, category, description, image, status, service_id',
       [project_name, category, description, image || null, status || 'ongoing', service_id || null]
     );
-    return result.rows[0];
+    const row = result.rows[0];
+    if (row) {
+      row.progress = row.status === 'Completed' ? 100 : (row.status === 'In Progress' ? 50 : 45);
+    }
+    return row;
   }
 
   static async update(id, data) {
@@ -56,7 +67,11 @@ class Project {
        RETURNING id, project_name, category, description, image, status, service_id`,
       [project_name, category, description, image, status, service_id, id]
     );
-    return result.rows[0] || null;
+    const row = result.rows[0] || null;
+    if (row) {
+      row.progress = row.status === 'Completed' ? 100 : (row.status === 'In Progress' ? 50 : 45);
+    }
+    return row;
   }
 
   static async delete(id) {
