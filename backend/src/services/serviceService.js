@@ -1,4 +1,5 @@
 const Service = require('../models/Service');
+const { resolveImageUrl } = require('../utils/imageResolver');
 
 /**
  * Get all construction services
@@ -54,6 +55,9 @@ const getServiceById = async (id) => {
  */
 const createService = async (serviceData) => {
   try {
+    if (serviceData && serviceData.image) {
+      serviceData.image = await resolveImageUrl(serviceData.image);
+    }
     const newService = await Service.create(serviceData);
 
     return {
@@ -75,6 +79,9 @@ const createService = async (serviceData) => {
  */
 const updateService = async (id, serviceData) => {
   try {
+    if (serviceData && serviceData.image) {
+      serviceData.image = await resolveImageUrl(serviceData.image);
+    }
     const updatedService = await Service.update(id, serviceData);
 
     if (!updatedService) {
