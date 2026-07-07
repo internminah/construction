@@ -5,6 +5,7 @@ const {
     updateService: editService,
     deleteService: removeService
 } = require('../services/serviceService');
+const { sendSuccess, sendError } = require('../utils/response');
 
 // ─── GET /api/services ─────────────────────────────────────────────
 // Public — returns all construction services
@@ -12,7 +13,11 @@ const getServices = async (req, res, next) => {
     try {
         const result = await getAllServices();
 
-        return res.status(result.success ? 200 : 500).json(result);
+        if (!result.success) {
+            return sendError(res, 500, result.message);
+        }
+
+        return sendSuccess(res, 200, result.message, result.data.services);
     } catch (error) {
         next(error);
     }
@@ -27,10 +32,10 @@ const getServiceById = async (req, res, next) => {
         const result = await fetchServiceById(id);
 
         if (!result.success) {
-            return res.status(404).json(result);
+            return sendError(res, 404, result.message);
         }
 
-        return res.status(200).json(result);
+        return sendSuccess(res, 200, result.message, result.data.service);
     } catch (error) {
         next(error);
     }
@@ -44,7 +49,11 @@ const createService = async (req, res, next) => {
 
         const result = await addService(serviceData);
 
-        return res.status(result.success ? 201 : 400).json(result);
+        if (!result.success) {
+            return sendError(res, 400, result.message);
+        }
+
+        return sendSuccess(res, 201, result.message, result.data.service);
     } catch (error) {
         next(error);
     }
@@ -60,10 +69,10 @@ const updateService = async (req, res, next) => {
         const result = await editService(id, serviceData);
 
         if (!result.success) {
-            return res.status(404).json(result);
+            return sendError(res, 404, result.message);
         }
 
-        return res.status(200).json(result);
+        return sendSuccess(res, 200, result.message, result.data.service);
     } catch (error) {
         next(error);
     }
@@ -78,10 +87,10 @@ const deleteService = async (req, res, next) => {
         const result = await removeService(id);
 
         if (!result.success) {
-            return res.status(404).json(result);
+            return sendError(res, 404, result.message);
         }
 
-        return res.status(200).json(result);
+        return sendSuccess(res, 200, result.message, result.data);
     } catch (error) {
         next(error);
     }
@@ -94,3 +103,4 @@ module.exports = {
     updateService,
     deleteService
 };
+
