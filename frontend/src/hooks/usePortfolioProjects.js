@@ -23,7 +23,7 @@ function mapProject(p) {
     location: '',
     year: '',
     tags: [],
-    progress: p.status === 'In Progress' ? 50 : 100,
+    progress: p.progress !== undefined ? p.progress : (p.status === 'In Progress' ? 50 : 100),
     phase: p.status === 'In Progress' ? 'Active Construction' : 'Delivered',
   };
 }

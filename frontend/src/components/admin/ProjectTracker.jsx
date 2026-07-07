@@ -270,7 +270,8 @@ export default function ProjectTracker({ companyInfo }) {
           description: formDescription,
           image: formImage || "",
           status: formStatus,
-          service_id: formServiceId ? parseInt(formServiceId) : null
+          service_id: formServiceId ? parseInt(formServiceId) : null,
+          progress: parseInt(formProgress) || 0
         })
       });
 
@@ -313,7 +314,8 @@ export default function ProjectTracker({ companyInfo }) {
           description: formDescription,
           image: formImage,
           status: formStatus,
-          service_id: formServiceId ? parseInt(formServiceId) : null
+          service_id: formServiceId ? parseInt(formServiceId) : null,
+          progress: parseInt(formProgress) || 0
         })
       });
 
@@ -358,7 +360,8 @@ export default function ProjectTracker({ companyInfo }) {
           description: statusUpdateProject.description,
           image: statusUpdateProject.image || "",
           status: formStatus,
-          service_id: statusUpdateProject.service_id ? parseInt(statusUpdateProject.service_id) : null
+          service_id: statusUpdateProject.service_id ? parseInt(statusUpdateProject.service_id) : null,
+          progress: parseInt(formProgress) || 0
         })
       });
 
